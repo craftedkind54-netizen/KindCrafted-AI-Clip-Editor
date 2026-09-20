@@ -1,99 +1,45 @@
 import express from "express";
 import multer from "multer";
 import OpenAI from "openai";
-
-import {
-  spawn
-} from "node:child_process";
-
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-
-import {
-  fileURLToPath
-} from "node:url";
-
+import { fileURLToPath } from "node:url";
 import crypto from "node:crypto";
-
 
 // =====================================================
 // KINDCRAFTED AI CLIP EDITOR
 // =====================================================
 
-const __filename =
-  fileURLToPath(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const __dirname =
-  path.dirname(__filename);
+const app = express();
+const PORT = Number(process.env.PORT) || 8080;
 
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 
-const app =
-  express();
-
-const PORT =
-  Number(process.env.PORT) ||
-  8080;
-
-
-const OPENAI_API_KEY =
-  process.env.OPENAI_API_KEY;
-
-
-const openai =
-  OPENAI_API_KEY
-    ? new OpenAI({
-        apiKey:
-          OPENAI_API_KEY
-      })
-    : null;
-
+const openai = OPENAI_API_KEY
+  ? new OpenAI({
+      apiKey: OPENAI_API_KEY
+    })
+  : null;
 
 // =====================================================
 // FOLDERS
 // =====================================================
 
-const uploadsDir =
-  path.join(
-    __dirname,
-    "uploads"
-  );
+const uploadsDir = path.join(__dirname, "uploads");
+const exportsDir = path.join(__dirname, "exports");
+const tempDir = path.join(__dirname, "temp");
 
-const exportsDir =
-  path.join(
-    __dirname,
-    "exports"
-  );
-
-const tempDir =
-  path.join(
-    __dirname,
-    "temp"
-  );
-
-
-for (
-  const folder of [
-    uploadsDir,
-    exportsDir,
-    tempDir
-  ]
-) {
-
-  if (
-    !fs.existsSync(folder)
-  ) {
-
-    fs.mkdirSync(
-      folder,
-      {
-        recursive: true
-      }
-    );
-
+for (const folder of [uploadsDir, exportsDir, tempDir]) {
+  if (!fs.existsSync(folder)) {
+    fs.mkdirSync(folder, {
+      recursive: true
+    });
   }
-
 }
-
 
 // =====================================================
 // EXPRESS
@@ -113,199 +59,115 @@ app.use(
 
 app.use(
   express.static(
-    path.join(
-      __dirname,
-      "public"
-    )
+    path.join(__dirname, "public")
   )
 );
 
 app.use(
   "/exports",
-  express.static(
-    exportsDir
-  )
+  express.static(exportsDir)
 );
-
 
 // =====================================================
 // UPLOAD
 // =====================================================
 
-const upload =
-  multer({
+const upload = multer({
+  dest: uploadsDir,
 
-    dest:
-      uploadsDir,
-
-    limits: {
-      fileSize:
-        1024 *
-        1024 *
-        1024
-    }
-
-  });
-
+  limits: {
+    fileSize: 1024 * 1024 * 1024
+  }
+});
 
 // =====================================================
 // COMMAND RUNNER
 // =====================================================
 
-function run(
-  command,
-  args
-) {
+function run(command, args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args);
 
-  return new Promise(
-    (
-      resolve,
-      reject
-    ) => {
+    let stdout = "";
+    let stderr = "";
 
-      const child =
-        spawn(
-          command,
-          args
+    child.stdout.on("data", data => {
+      stdout += data.toString();
+    });
+
+    child.stderr.on("data", data => {
+      stderr += data.toString();
+    });
+
+    child.on("error", reject);
+
+    child.on("close", code => {
+      if (code === 0) {
+        resolve({
+          stdout,
+          stderr
+        });
+      } else {
+        reject(
+          new Error(
+            `${command} failed.\n${stderr}`
+          )
         );
-
-
-      let stdout = "";
-      let stderr = "";
-
-
-      child.stdout.on(
-        "data",
-        data => {
-
-          stdout +=
-            data.toString();
-
-        }
-      );
-
-
-      child.stderr.on(
-        "data",
-        data => {
-
-          stderr +=
-            data.toString();
-
-        }
-      );
-
-
-      child.on(
-        "error",
-        reject
-      );
-
-
-      child.on(
-        "close",
-        code => {
-
-          if (
-            code === 0
-          ) {
-
-            resolve({
-              stdout,
-              stderr
-            });
-
-          } else {
-
-            reject(
-              new Error(
-                `${command} failed.\n${stderr}`
-              )
-            );
-
-          }
-
-        }
-      );
-
-    }
-  );
-
+      }
+    });
+  });
 }
-
 
 // =====================================================
 // BOOLEAN
 // =====================================================
 
-function boolValue(
-  value,
-  fallback = false
-) {
-
+function boolValue(value, fallback = false) {
   if (
     value === undefined ||
     value === null
   ) {
-
     return fallback;
-
   }
 
-
   return (
-    String(value)
-      .toLowerCase() ===
+    String(value).toLowerCase() ===
     "true"
   );
-
 }
-
 
 // =====================================================
 // PROBE VIDEO
 // =====================================================
 
-async function probe(
-  file
-) {
+async function probe(file) {
+  const result = await run(
+    "ffprobe",
+    [
+      "-v",
+      "error",
 
-  const result =
-    await run(
-      "ffprobe",
-      [
-        "-v",
-        "error",
+      "-show_streams",
+      "-show_format",
 
-        "-show_streams",
-        "-show_format",
+      "-of",
+      "json",
 
-        "-of",
-        "json",
-
-        file
-      ]
-    );
-
+      file
+    ]
+  );
 
   return JSON.parse(
     result.stdout
   );
-
 }
-
 
 // =====================================================
 // VIDEO ANALYSIS
 // =====================================================
 
-async function analyzeVideo(
-  file
-) {
-
-  const info =
-    await probe(file);
-
+async function analyzeVideo(file) {
+  const info = await probe(file);
 
   const videoStream =
     info.streams.find(
@@ -314,7 +176,6 @@ async function analyzeVideo(
         "video"
     );
 
-
   const audioStream =
     info.streams.find(
       stream =>
@@ -322,205 +183,132 @@ async function analyzeVideo(
         "audio"
     );
 
-
-  const duration =
-    Number(
-      info.format?.duration ||
-      videoStream?.duration ||
-      0
-    );
-
+  const duration = Number(
+    info.format?.duration ||
+    videoStream?.duration ||
+    0
+  );
 
   let silence = [];
 
-
   if (audioStream) {
-
     try {
+      const result = await run(
+        "ffmpeg",
+        [
+          "-hide_banner",
 
-      const result =
-        await run(
-          "ffmpeg",
-          [
-            "-hide_banner",
+          "-i",
+          file,
 
-            "-i",
-            file,
+          "-af",
+          "silencedetect=noise=-38dB:d=0.65",
 
-            "-af",
-            "silencedetect=noise=-38dB:d=0.65",
+          "-f",
+          "null",
 
-            "-f",
-            "null",
-
-            "-"
-          ]
-        );
-
+          "-"
+        ]
+      );
 
       silence =
         parseSilence(
           result.stderr
         );
-
     } catch (error) {
-
       silence =
         parseSilence(
           error.message || ""
         );
-
     }
-
   }
 
-
   return {
-
     duration,
 
-    width:
-      Number(
-        videoStream?.width ||
-        0
-      ),
+    width: Number(
+      videoStream?.width || 0
+    ),
 
-    height:
-      Number(
-        videoStream?.height ||
-        0
-      ),
+    height: Number(
+      videoStream?.height || 0
+    ),
 
     hasAudio:
-      Boolean(
-        audioStream
-      ),
+      Boolean(audioStream),
 
     silence
-
   };
-
 }
-
 
 // =====================================================
 // SILENCE PARSER
 // =====================================================
 
-function parseSilence(
-  text
-) {
-
+function parseSilence(text) {
   const starts = [];
   const sections = [];
 
-
   const lines =
-    String(text)
-      .split("\n");
+    String(text).split("\n");
 
-
-  for (
-    const line of lines
-  ) {
-
+  for (const line of lines) {
     const start =
       line.match(
         /silence_start:\s*([0-9.]+)/
       );
 
-
     if (start) {
-
       starts.push(
         Number(start[1])
       );
-
     }
-
 
     const end =
       line.match(
         /silence_end:\s*([0-9.]+)/
       );
 
-
     if (end) {
-
       const startTime =
         starts.length
           ? starts.shift()
           : null;
 
-
-      if (
-        startTime !== null
-      ) {
-
+      if (startTime !== null) {
         sections.push({
-
-          start:
-            startTime,
-
-          end:
-            Number(
-              end[1]
-            )
-
+          start: startTime,
+          end: Number(end[1])
         });
-
       }
-
     }
-
   }
 
-
   return sections;
-
 }
-
 
 // =====================================================
 // CLEANUP
 // =====================================================
 
-function cleanup(
-  ...files
-) {
-
-  for (
-    const file of files
-  ) {
-
+function cleanup(...files) {
+  for (const file of files) {
     if (!file) {
       continue;
     }
 
-
     try {
-
-      if (
-        fs.existsSync(file)
-      ) {
-
+      if (fs.existsSync(file)) {
         fs.unlinkSync(file);
-
       }
-
     } catch (error) {
-
       console.error(
         "Cleanup error:",
         error.message
       );
-
     }
-
   }
-
 }
-
 
 // =====================================================
 // EXTRACT AUDIO
@@ -530,13 +318,11 @@ async function extractAudio(
   videoFile,
   id
 ) {
-
   const audioFile =
     path.join(
       tempDir,
       `${id}-speech.mp3`
     );
-
 
   await run(
     "ffmpeg",
@@ -561,11 +347,8 @@ async function extractAudio(
     ]
   );
 
-
   return audioFile;
-
 }
-
 
 // =====================================================
 // TRANSCRIBE
@@ -576,32 +359,24 @@ async function transcribeVideo(
   id,
   hasAudio
 ) {
-
   if (
     !openai ||
     !hasAudio
   ) {
-
     return "";
-
   }
-
 
   let audioFile = null;
 
-
   try {
-
     audioFile =
       await extractAudio(
         videoFile,
         id
       );
 
-
     const transcription =
       await openai.audio.transcriptions.create({
-
         file:
           fs.createReadStream(
             audioFile
@@ -609,38 +384,25 @@ async function transcribeVideo(
 
         model:
           "gpt-4o-mini-transcribe"
-
       });
 
-
     return (
-      transcription.text ||
-      ""
+      transcription.text || ""
     ).trim();
-
   } catch (error) {
-
     console.error(
       "Transcription failed:",
       error.message
     );
 
-
     return "";
-
   } finally {
-
-    cleanup(
-      audioFile
-    );
-
+    cleanup(audioFile);
   }
-
 }
 
-
 // =====================================================
-// SAMPLE VIDEO FRAMES
+// EXTRACT VIDEO FRAMES
 // =====================================================
 
 async function extractFrames(
@@ -648,27 +410,21 @@ async function extractFrames(
   duration,
   id
 ) {
-
   const framePaths = [];
 
-
-  const percentages =
-    [
-      0.10,
-      0.30,
-      0.50,
-      0.70,
-      0.90
-    ];
-
+  const percentages = [
+    0.10,
+    0.30,
+    0.50,
+    0.70,
+    0.90
+  ];
 
   for (
     let index = 0;
-    index <
-    percentages.length;
+    index < percentages.length;
     index++
   ) {
-
     const timestamp =
       Math.max(
         0,
@@ -676,16 +432,13 @@ async function extractFrames(
         percentages[index]
       );
 
-
     const framePath =
       path.join(
         tempDir,
         `${id}-frame-${index}.jpg`
       );
 
-
     try {
-
       await run(
         "ffmpeg",
         [
@@ -710,103 +463,80 @@ async function extractFrames(
         ]
       );
 
-
       if (
-        fs.existsSync(
-          framePath
-        )
+        fs.existsSync(framePath)
       ) {
-
         framePaths.push(
           framePath
         );
-
       }
-
     } catch (error) {
-
       console.error(
         "Frame extraction failed:",
         error.message
       );
-
     }
-
   }
 
-
   return framePaths;
-
 }
 
-
 // =====================================================
-// IMAGE TO DATA URL
+// IMAGE DATA
 // =====================================================
 
-function imageDataURL(
-  file
-) {
-
+function imageDataURL(file) {
   const buffer =
     fs.readFileSync(file);
 
-
   return (
     "data:image/jpeg;base64," +
-    buffer.toString(
-      "base64"
-    )
+    buffer.toString("base64")
   );
-
 }
 
-
 // =====================================================
-// SAFE JSON PARSER
+// JSON PARSER
 // =====================================================
 
-function parseAIJSON(
-  text
-) {
-
+function parseAIJSON(text) {
   try {
-
-    return JSON.parse(
-      text
-    );
-
+    return JSON.parse(text);
   } catch {}
 
-
   const match =
-    String(text)
-      .match(
-        /\{[\s\S]*\}/
-      );
-
+    String(text).match(
+      /\{[\s\S]*\}/
+    );
 
   if (!match) {
-
     return null;
-
   }
 
-
   try {
-
     return JSON.parse(
       match[0]
     );
-
   } catch {
-
     return null;
-
   }
-
 }
 
+// =====================================================
+// CLEAN AI TEXT
+// =====================================================
+
+function cleanText(
+  value,
+  maxLength = 60
+) {
+  return String(value || "")
+    .replace(/[\r\n]+/g, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^["']+|["']+$/g, "")
+    .trim()
+    .slice(0, maxLength);
+}
 
 // =====================================================
 // AI CONTENT ANALYSIS
@@ -818,19 +548,12 @@ async function analyzeWithAI({
   autoHeading,
   autoMeme
 }) {
-
   const fallback = {
-
     heading: "",
-
     memeTop: "",
-
     memeBottom: "",
-
     summary: ""
-
   };
-
 
   if (
     !openai ||
@@ -839,31 +562,24 @@ async function analyzeWithAI({
       !autoMeme
     )
   ) {
-
     return fallback;
-
   }
 
-
   try {
-
     const content = [];
 
-
     content.push({
-
-      type:
-        "input_text",
+      type: "input_text",
 
       text:
 `You are editing a family-friendly gaming YouTube Short.
 
-Analyze the transcript and sampled video frames.
+Analyze the transcript and the sampled video frames.
 
 TRANSCRIPT:
 ${transcript || "(No understandable speech was detected.)"}
 
-Return ONLY valid JSON in this exact format:
+Return ONLY valid JSON:
 
 {
   "heading": "",
@@ -872,265 +588,219 @@ Return ONLY valid JSON in this exact format:
   "summary": ""
 }
 
-Rules:
-
-- Heading must be short and exciting.
-- Heading should describe what actually happens.
-- Do not invent events.
-- Maximum heading length: 45 characters.
-- Meme text should only be used when it genuinely fits.
-- Meme text should be very short.
-- Keep everything family-friendly.
-- Do not use profanity.
+HEADING RULES:
+- Create a heading only if requested.
+- The heading MUST describe the actual clip.
+- Make it exciting and easy to read.
+- Keep it between 2 and 7 words.
+- Maximum 40 characters.
 - Do not use hashtags.
-- Do not use quotation marks around the text.
-- If meme text is unnecessary, leave memeTop and memeBottom empty.
-- summary should briefly explain what happens in the clip.`
+- Do not use quotation marks.
+- Do not invent something that did not happen.
 
+MEME RULES:
+- Meme text should only be added when it genuinely fits.
+- Keep meme text very short.
+- Keep everything family-friendly.
+- No profanity.
+- If meme text is unnecessary, leave it blank.
+
+SUMMARY:
+- Briefly explain what actually happens in the clip.`
     });
 
-
     for (
-      const framePath
-      of framePaths
+      const framePath of framePaths
     ) {
-
       content.push({
-
-        type:
-          "input_image",
+        type: "input_image",
 
         image_url:
           imageDataURL(
             framePath
           ),
 
-        detail:
-          "low"
-
+        detail: "low"
       });
-
     }
-
 
     const response =
       await openai.responses.create({
-
-        model:
-          "gpt-5",
+        model: "gpt-5",
 
         input: [
           {
-            role:
-              "user",
-
+            role: "user",
             content
           }
         ]
-
       });
-
 
     const parsed =
       parseAIJSON(
         response.output_text
       );
 
-
     if (!parsed) {
+      console.error(
+        "Could not parse AI JSON:",
+        response.output_text
+      );
 
       return fallback;
-
     }
 
-
     return {
-
       heading:
         autoHeading
-          ? String(
-              parsed.heading ||
-              ""
-            ).trim()
+          ? cleanText(
+              parsed.heading,
+              40
+            )
           : "",
 
       memeTop:
         autoMeme
-          ? String(
-              parsed.memeTop ||
-              ""
-            ).trim()
+          ? cleanText(
+              parsed.memeTop,
+              50
+            )
           : "",
 
       memeBottom:
         autoMeme
-          ? String(
-              parsed.memeBottom ||
-              ""
-            ).trim()
+          ? cleanText(
+              parsed.memeBottom,
+              50
+            )
           : "",
 
       summary:
-        String(
-          parsed.summary ||
-          ""
-        ).trim()
-
+        cleanText(
+          parsed.summary,
+          300
+        )
     };
-
   } catch (error) {
-
     console.error(
       "AI analysis failed:",
-      error.message
+      error
     );
-
 
     return fallback;
-
   }
-
 }
 
-
 // =====================================================
-// ESCAPE DRAWTEXT
+// CREATE TEXT FILE
 // =====================================================
 
-function escapeDrawText(
-  value
+function createTextFile(
+  id,
+  name,
+  text
 ) {
-
-  return String(
-    value || ""
-  )
-    .replace(
-      /\\/g,
-      "\\\\"
-    )
-    .replace(
-      /:/g,
-      "\\:"
-    )
-    .replace(
-      /'/g,
-      "\\'"
-    )
-    .replace(
-      /%/g,
-      "\\%"
-    )
-    .replace(
-      /\n/g,
-      " "
+  const file =
+    path.join(
+      tempDir,
+      `${id}-${name}.txt`
     );
 
-}
-
-
-// =====================================================
-// SILENCE REMOVAL FILTER
-// =====================================================
-
-function buildKeepSections(
-  duration,
-  silence
-) {
-
-  if (
-    !duration ||
-    !silence.length
-  ) {
-
-    return [
-      {
-        start: 0,
-        end: duration
-      }
-    ];
-
-  }
-
-
-  const sections = [];
-
-  let cursor = 0;
-
-
-  for (
-    const item of silence
-  ) {
-
-    // Leave a tiny natural pause.
-
-    const cutStart =
-      Math.max(
-        cursor,
-        item.start + 0.08
-      );
-
-
-    const cutEnd =
-      Math.min(
-        duration,
-        item.end - 0.08
-      );
-
-
-    if (
-      cutStart >
-      cursor + 0.05
-    ) {
-
-      sections.push({
-
-        start:
-          cursor,
-
-        end:
-          cutStart
-
-      });
-
-    }
-
-
-    cursor =
-      Math.max(
-        cursor,
-        cutEnd
-      );
-
-  }
-
-
-  if (
-    cursor <
-    duration
-  ) {
-
-    sections.push({
-
-      start:
-        cursor,
-
-      end:
-        duration
-
-    });
-
-  }
-
-
-  return sections.filter(
-    section =>
-      section.end -
-      section.start >
-      0.05
+  fs.writeFileSync(
+    file,
+    String(text || ""),
+    "utf8"
   );
 
+  return file;
 }
 
+// =====================================================
+// ESCAPE FILTER PATH
+// =====================================================
+
+function escapeFilterPath(file) {
+  return file
+    .replace(/\\/g, "/")
+    .replace(/:/g, "\\:")
+    .replace(/'/g, "\\'");
+}
+
+// =====================================================
+// FIND FONT
+// =====================================================
+
+function findFont() {
+  const possibleFonts = [
+    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/dejavu/DejaVuSans-Bold.ttf",
+    "/usr/share/fonts/truetype/liberation2/LiberationSans-Bold.ttf",
+    "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf"
+  ];
+
+  for (
+    const font of possibleFonts
+  ) {
+    if (fs.existsSync(font)) {
+      console.log(
+        "Using font:",
+        font
+      );
+
+      return font;
+    }
+  }
+
+  console.log(
+    "No direct font file found. Using fontconfig."
+  );
+
+  return null;
+}
+
+// =====================================================
+// DRAWTEXT FILTER
+// =====================================================
+
+function textFilter({
+  textFile,
+  font,
+  fontSize,
+  y,
+  box = true
+}) {
+  let filter =
+    "drawtext=";
+
+  if (font) {
+    filter +=
+      `fontfile='${escapeFilterPath(font)}':`;
+  } else {
+    filter +=
+      "font='DejaVu Sans':";
+  }
+
+  filter +=
+    `textfile='${escapeFilterPath(textFile)}':` +
+    "reload=0:" +
+    "fontcolor=white:" +
+    `fontsize=${fontSize}:` +
+    "borderw=6:" +
+    "bordercolor=black:";
+
+  if (box) {
+    filter +=
+      "box=1:" +
+      "boxcolor=black@0.45:" +
+      "boxborderw=18:";
+  }
+
+  filter +=
+    "x=(w-text_w)/2:" +
+    `y=${y}`;
+
+  return filter;
+}
 
 // =====================================================
 // HEALTH
@@ -1139,62 +809,41 @@ function buildKeepSections(
 app.get(
   "/api/health",
 
-  async (
-    req,
-    res
-  ) => {
-
+  async (req, res) => {
     let ffmpeg = false;
     let ffprobe = false;
 
-
     try {
-
       await run(
         "ffmpeg",
-        [
-          "-version"
-        ]
+        ["-version"]
       );
 
       ffmpeg = true;
-
     } catch {}
 
-
     try {
-
       await run(
         "ffprobe",
-        [
-          "-version"
-        ]
+        ["-version"]
       );
 
       ffprobe = true;
-
     } catch {}
 
-
     res.json({
-
-      ok:
-        true,
+      ok: true,
 
       ffmpeg,
-
       ffprobe,
 
       openai:
         Boolean(
           OPENAI_API_KEY
         )
-
     });
-
   }
 );
-
 
 // =====================================================
 // EDIT VIDEO
@@ -1205,54 +854,37 @@ app.post(
 
   upload.fields([
     {
-      name:
-        "video",
-
-      maxCount:
-        1
+      name: "video",
+      maxCount: 1
     },
     {
-      name:
-        "music",
-
-      maxCount:
-        1
+      name: "music",
+      maxCount: 1
     }
   ]),
 
-  async (
-    req,
-    res
-  ) => {
-
+  async (req, res) => {
     const videoFile =
       req.files?.video?.[0]?.path;
-
 
     const musicFile =
       req.files?.music?.[0]?.path ||
       null;
 
-
     if (!videoFile) {
-
       return res
         .status(400)
         .json({
           error:
             "A video file is required."
         });
-
     }
-
 
     const id =
       crypto.randomUUID();
 
-
     const outputName =
       `${id}.mp4`;
-
 
     const outputFile =
       path.join(
@@ -1260,15 +892,16 @@ app.post(
         outputName
       );
 
-
     let framePaths = [];
 
+    let headingFile = null;
+    let memeTopFile = null;
+    let memeBottomFile = null;
 
     try {
-
-      // =================================================
-      // USER OPTIONS
-      // =================================================
+      // ===============================================
+      // OPTIONS
+      // ===============================================
 
       const autoHeading =
         boolValue(
@@ -1276,13 +909,11 @@ app.post(
           true
         );
 
-
       const autoMeme =
         boolValue(
           req.body.autoMeme,
           false
         );
-
 
       const autoZoom =
         boolValue(
@@ -1290,13 +921,11 @@ app.post(
           true
         );
 
-
       const removeSilence =
         boolValue(
           req.body.removeSilence,
           true
         );
-
 
       const fillScreen =
         boolValue(
@@ -1304,48 +933,54 @@ app.post(
           true
         );
 
-
       const keepAudio =
         boolValue(
           req.body.keepAudio,
           true
         );
 
+      console.log(
+        "EDIT OPTIONS:",
+        {
+          autoHeading,
+          autoMeme,
+          autoZoom,
+          removeSilence,
+          fillScreen,
+          keepAudio,
+          music:
+            Boolean(musicFile)
+        }
+      );
 
-      // =================================================
-      // TECHNICAL ANALYSIS
-      // =================================================
+      // ===============================================
+      // ANALYZE VIDEO
+      // ===============================================
 
       const analysis =
         await analyzeVideo(
           videoFile
         );
 
-
       if (
         !analysis.duration ||
         analysis.duration <= 0
       ) {
-
         throw new Error(
-          "Could not determine the video duration."
+          "Could not determine video duration."
         );
-
       }
 
-
-      // =================================================
+      // ===============================================
       // AI ANALYSIS
-      // =================================================
+      // ===============================================
 
       let transcript = "";
-
 
       if (
         autoHeading ||
         autoMeme
       ) {
-
         transcript =
           await transcribeVideo(
             videoFile,
@@ -1353,166 +988,228 @@ app.post(
             analysis.hasAudio
           );
 
-
         framePaths =
           await extractFrames(
             videoFile,
             analysis.duration,
             id
           );
-
       }
-
 
       const ai =
         await analyzeWithAI({
-
           transcript,
-
           framePaths,
-
           autoHeading,
-
           autoMeme
-
         });
 
-
       console.log(
-        "AI analysis:",
-        ai
+        "GENERATED HEADING:",
+        ai.heading ||
+        "(none)"
       );
 
+      console.log(
+        "GENERATED MEME TOP:",
+        ai.memeTop ||
+        "(none)"
+      );
 
-      // =================================================
-      // BASE VIDEO FILTER
-      // =================================================
+      console.log(
+        "GENERATED MEME BOTTOM:",
+        ai.memeBottom ||
+        "(none)"
+      );
 
-      let baseVideo;
-
-
-      if (fillScreen) {
-
-        baseVideo =
-          "scale=1080:1920:" +
-          "force_original_aspect_ratio=increase," +
-          "crop=1080:1920," +
-          "setsar=1";
-
-      } else {
-
-        baseVideo =
-          "scale=1080:1920:" +
-          "force_original_aspect_ratio=decrease," +
-          "pad=1080:1920:" +
-          "(ow-iw)/2:" +
-          "(oh-ih)/2," +
-          "setsar=1";
-
-      }
-
-
-      // =================================================
-      // AUTOMATIC MOTION
-      // =================================================
-
-      if (autoZoom) {
-
-        baseVideo +=
-          ",scale=1118:1987," +
-          "crop=1080:1920:" +
-          "x='19+12*sin(t*0.8)':" +
-          "y='33+18*sin(t*0.55)'";
-
-      }
-
-
-      // =================================================
-      // TEXT
-      // =================================================
-
-      const videoFilters =
-        [
-          baseVideo
-        ];
-
-
-      const font =
-        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf";
-
+      // ===============================================
+      // CREATE TEXT FILES
+      // ===============================================
 
       if (
+        autoHeading &&
         ai.heading
       ) {
-
-        videoFilters.push(
-          "drawtext=" +
-          `fontfile='${font}':` +
-          `text='${escapeDrawText(ai.heading)}':` +
-          "fontcolor=white:" +
-          "fontsize=62:" +
-          "borderw=5:" +
-          "bordercolor=black:" +
-          "x=(w-text_w)/2:" +
-          "y=90"
-        );
-
+        headingFile =
+          createTextFile(
+            id,
+            "heading",
+            ai.heading
+          );
       }
 
-
       if (
+        autoMeme &&
         ai.memeTop
       ) {
-
-        videoFilters.push(
-          "drawtext=" +
-          `fontfile='${font}':` +
-          `text='${escapeDrawText(ai.memeTop)}':` +
-          "fontcolor=white:" +
-          "fontsize=54:" +
-          "borderw=5:" +
-          "bordercolor=black:" +
-          "x=(w-text_w)/2:" +
-          "y=190"
-        );
-
+        memeTopFile =
+          createTextFile(
+            id,
+            "meme-top",
+            ai.memeTop
+          );
       }
-
 
       if (
+        autoMeme &&
         ai.memeBottom
       ) {
-
-        videoFilters.push(
-          "drawtext=" +
-          `fontfile='${font}':` +
-          `text='${escapeDrawText(ai.memeBottom)}':` +
-          "fontcolor=white:" +
-          "fontsize=54:" +
-          "borderw=5:" +
-          "bordercolor=black:" +
-          "x=(w-text_w)/2:" +
-          "y=h-text_h-190"
-        );
-
+        memeBottomFile =
+          createTextFile(
+            id,
+            "meme-bottom",
+            ai.memeBottom
+          );
       }
 
+      // ===============================================
+      // VIDEO FILTER
+      // ===============================================
 
-      // =================================================
+      const videoFilters = [];
+
+      if (fillScreen) {
+        videoFilters.push(
+          "scale=1080:1920:" +
+          "force_original_aspect_ratio=increase"
+        );
+
+        videoFilters.push(
+          "crop=1080:1920"
+        );
+
+        videoFilters.push(
+          "setsar=1"
+        );
+      } else {
+        videoFilters.push(
+          "scale=1080:1920:" +
+          "force_original_aspect_ratio=decrease"
+        );
+
+        videoFilters.push(
+          "pad=1080:1920:" +
+          "(ow-iw)/2:" +
+          "(oh-ih)/2"
+        );
+
+        videoFilters.push(
+          "setsar=1"
+        );
+      }
+
+      // ===============================================
+      // AUTOMATIC MOTION
+      // ===============================================
+
+      if (autoZoom) {
+        videoFilters.push(
+          "scale=1118:1988"
+        );
+
+        videoFilters.push(
+          "crop=1080:1920:" +
+          "x='19+12*sin(t*0.8)':" +
+          "y='34+18*sin(t*0.55)'"
+        );
+      }
+
+      // ===============================================
+      // FONT
+      // ===============================================
+
+      const font =
+        findFont();
+
+      // ===============================================
+      // HEADING
+      // ===============================================
+
+      if (headingFile) {
+        videoFilters.push(
+          textFilter({
+            textFile:
+              headingFile,
+
+            font,
+
+            fontSize:
+              64,
+
+            y:
+              "110",
+
+            box:
+              true
+          })
+        );
+      }
+
+      // ===============================================
+      // MEME TOP
+      // ===============================================
+
+      if (memeTopFile) {
+        videoFilters.push(
+          textFilter({
+            textFile:
+              memeTopFile,
+
+            font,
+
+            fontSize:
+              52,
+
+            y:
+              "250",
+
+            box:
+              false
+          })
+        );
+      }
+
+      // ===============================================
+      // MEME BOTTOM
+      // ===============================================
+
+      if (memeBottomFile) {
+        videoFilters.push(
+          textFilter({
+            textFile:
+              memeBottomFile,
+
+            font,
+
+            fontSize:
+              52,
+
+            y:
+              "h-text_h-180",
+
+            box:
+              false
+          })
+        );
+      }
+
+      console.log(
+        "VIDEO FILTER:",
+        videoFilters.join(",")
+      );
+
+      // ===============================================
       // INPUTS
-      // =================================================
+      // ===============================================
 
-      const args =
-        [
-          "-y",
+      const args = [
+        "-y",
 
-          "-i",
-          videoFile
-        ];
-
+        "-i",
+        videoFile
+      ];
 
       if (musicFile) {
-
         args.push(
           "-stream_loop",
           "-1",
@@ -1520,32 +1217,27 @@ app.post(
           "-i",
           musicFile
         );
-
       }
 
-
-      // =================================================
-      // VIDEO
-      // =================================================
+      // ===============================================
+      // VIDEO FILTERS
+      // ===============================================
 
       args.push(
         "-vf",
         videoFilters.join(",")
       );
 
-
-      // =================================================
+      // ===============================================
       // AUDIO
-      // =================================================
+      // ===============================================
 
       if (
         keepAudio &&
         analysis.hasAudio &&
         musicFile
       ) {
-
         args.push(
-
           "-filter_complex",
 
           "[0:a]" +
@@ -1574,30 +1266,20 @@ app.post(
 
           "-map",
           "[finalaudio]"
-
         );
-
       } else if (
         keepAudio &&
         analysis.hasAudio
       ) {
-
         args.push(
-
           "-map",
           "0:v:0",
 
           "-map",
           "0:a:0"
-
         );
-
-      } else if (
-        musicFile
-      ) {
-
+      } else if (musicFile) {
         args.push(
-
           "-map",
           "0:v:0",
 
@@ -1606,29 +1288,21 @@ app.post(
 
           "-af",
           "volume=0.20"
-
         );
-
       } else {
-
         args.push(
-
           "-map",
           "0:v:0",
 
           "-an"
-
         );
-
       }
 
-
-      // =================================================
-      // OUTPUT SETTINGS
-      // =================================================
+      // ===============================================
+      // OUTPUT
+      // ===============================================
 
       args.push(
-
         "-t",
         String(
           analysis.duration
@@ -1648,9 +1322,7 @@ app.post(
 
         "-r",
         "30"
-
       );
-
 
       if (
         (
@@ -1659,70 +1331,64 @@ app.post(
         ) ||
         musicFile
       ) {
-
         args.push(
-
           "-c:a",
           "aac",
 
           "-b:a",
           "192k"
-
         );
-
       }
 
-
       args.push(
-
         "-movflags",
         "+faststart",
 
         outputFile
-
       );
 
-
-      // =================================================
+      // ===============================================
       // RENDER
-      // =================================================
+      // ===============================================
 
       await run(
         "ffmpeg",
         args
       );
 
+      // ===============================================
+      // VERIFY OUTPUT
+      // ===============================================
 
-      // =================================================
-      // NOTE ABOUT SILENCE
-      // =================================================
-      //
-      // Silence detection is real.
-      //
-      // For this version we do NOT physically splice
-      // the timeline yet because doing that incorrectly
-      // can desynchronize gameplay audio, music and video.
-      //
-      // The detected silence data is returned below.
-      //
-      // =================================================
+      if (
+        !fs.existsSync(
+          outputFile
+        )
+      ) {
+        throw new Error(
+          "FFmpeg did not create the output video."
+        );
+      }
 
+      // ===============================================
+      // CLEAN TEMP FILES
+      // ===============================================
 
       cleanup(
         videoFile,
         musicFile,
-        ...framePaths
+        ...framePaths,
+        headingFile,
+        memeTopFile,
+        memeBottomFile
       );
 
-
-      // =================================================
+      // ===============================================
       // RESPONSE
-      // =================================================
+      // ===============================================
 
       res.json({
-
-        ok:
-          true,
+        ok: true,
 
         url:
           `/exports/${outputName}`,
@@ -1731,16 +1397,20 @@ app.post(
           analysis.duration,
 
         musicAdded:
+          Boolean(musicFile),
+
+        headingAdded:
+          Boolean(headingFile),
+
+        memeAdded:
           Boolean(
-            musicFile
+            memeTopFile ||
+            memeBottomFile
           ),
 
         ai: {
-
           enabled:
-            Boolean(
-              openai
-            ),
+            Boolean(openai),
 
           heading:
             ai.heading,
@@ -1754,13 +1424,10 @@ app.post(
           summary:
             ai.summary,
 
-          transcript:
-            transcript
-
+          transcript
         },
 
         analysis: {
-
           duration:
             analysis.duration,
 
@@ -1775,74 +1442,49 @@ app.post(
 
           silence:
             analysis.silence
-
         },
 
         output: {
-
-          width:
-            1080,
-
-          height:
-            1920,
-
-          aspectRatio:
-            "9:16",
-
-          fillsFrame:
-            fillScreen
-
+          width: 1080,
+          height: 1920,
+          aspectRatio: "9:16",
+          fillsFrame: fillScreen
         },
 
         options: {
-
           autoHeading,
-
           autoMeme,
-
           autoZoom,
-
           removeSilence,
-
           fillScreen,
-
           keepAudio
-
         }
-
       });
-
-
     } catch (error) {
-
       console.error(
         "EDIT ERROR:",
         error
       );
 
-
       cleanup(
         videoFile,
         musicFile,
-        ...framePaths
+        ...framePaths,
+        headingFile,
+        memeTopFile,
+        memeBottomFile
       );
-
 
       res
         .status(500)
         .json({
-
           error:
             error.message ||
             "Video editing failed."
-
         });
-
     }
-
   }
 );
-
 
 // =====================================================
 // SERVER
@@ -1851,7 +1493,6 @@ app.post(
 app.listen(
   PORT,
   () => {
-
     console.log(
       `KindCrafted AI Clip Editor running on port ${PORT}`
     );
@@ -1872,16 +1513,15 @@ app.listen(
     );
 
     console.log(
-      "AI headings: enabled"
+      "AI heading rendering: enabled"
     );
 
     console.log(
-      "AI meme text: enabled"
+      "AI meme rendering: enabled"
     );
 
     console.log(
       "Background music: OPTIONAL"
     );
-
   }
 );

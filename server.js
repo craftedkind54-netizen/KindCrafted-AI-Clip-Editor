@@ -11,7 +11,6 @@ import { promisify } from "util";
 const execFileAsync = promisify(execFile);
 
 const app = express();
-
 const PORT = Number(process.env.PORT || 3000);
 
 const ROOT = process.cwd();
@@ -97,6 +96,12 @@ function getDuration(info) {
   return Number(info?.format?.duration || 0);
 }
 
+function hasAudio(info) {
+  return info.streams.some(
+    (stream) => stream.codec_type === "audio"
+  );
+}
+
 function getVideoDimensions(info) {
   const video = info.streams.find(
     (stream) => stream.codec_type === "video"
@@ -159,13 +164,6 @@ async function extractAnalysisFrames(
     recursive: true
   });
 
-  /*
-   * Sample the WHOLE video.
-   *
-   * Short clips get frequent frames.
-   * Longer clips get fewer frames so requests
-   * don't become enormous.
-   */
   let interval = 2;
 
   if (duration > 60) interval = 3;
@@ -191,9 +189,6 @@ async function extractAnalysisFrames(
     .filter((name) => name.endsWith(".jpg"))
     .sort();
 
-  /*
-   * Keep requests manageable.
-   */
   const maxFrames = 45;
 
   let selected = files;
@@ -213,16 +208,13 @@ async function extractAnalysisFrames(
     selected = [...new Set(selected)];
   }
 
-  return selected.map((name, index) => {
+  return selected.map((name) => {
     const fullPath =
       path.join(frameDirectory, name);
 
     const base64 =
       fs.readFileSync(fullPath).toString("base64");
 
-    /*
-     * Approximate timestamp for AI context.
-     */
     const originalIndex =
       files.indexOf(name);
 
@@ -241,11 +233,6 @@ async function extractAnalysisFrames(
 }
 
 function fallbackPlan(duration) {
-  /*
-   * If AI is unavailable, don't destroy
-   * the user's clip. Keep the ending-heavy
-   * portion instead.
-   */
   const desiredLength =
     Math.min(duration, 45);
 
@@ -259,6 +246,7 @@ function fallbackPlan(duration) {
       "AI analysis unavailable. Using ending-focused fallback.",
     hook:
       "WAIT FOR THE END 👀",
+
     segments: [
       {
         start,
@@ -266,7 +254,9 @@ function fallbackPlan(duration) {
         reason:
           "Ending-focused fallback"
       }
-    ]
+    ],
+
+    memes: []
   };
 }
 
@@ -295,10 +285,11 @@ async function analyzeVideoStory({
     {
       type: "input_text",
       text: `
-You are the story editor for a family-friendly
+You are an AI video editor for a family-friendly
 Minecraft YouTube Shorts creator.
 
-Analyze the ENTIRE video before deciding what to cut.
+You MUST analyze the ENTIRE supplied video context
+before making editing decisions.
 
 VIDEO DURATION:
 ${duration.toFixed(2)} seconds
@@ -306,104 +297,234 @@ ${duration.toFixed(2)} seconds
 TRANSCRIPT:
 ${transcript.text || "(No usable transcript)"}
 
-IMPORTANT CREATOR RULES:
+==================================================
+STORY EDITING RULES
+==================================================
 
-1. The final video must tell a coherent story.
+1. Understand the overall story before cutting.
 
-2. The ending often contains the main payoff,
-win, loss, reveal, funny moment, reaction,
-or result.
+2. The ending frequently contains the main payoff:
+a win, loss, reveal, funny moment, reaction,
+unexpected event, challenge result, or punchline.
 
-3. Work backward from that payoff and keep
-the earlier footage that is necessary to
-understand or enjoy it.
+3. Work backward from that payoff.
 
-4. Remove footage that does not contribute:
-long walking, waiting, menus, inventory
-management, repetitive gameplay, silence,
-failed setup, or unrelated conversation.
+4. Keep earlier footage that makes the payoff
+understandable, entertaining, or more satisfying.
 
-5. DO NOT remove setup that is necessary
-for the ending to make sense.
+5. Remove footage that does not contribute:
+- long walking
+- waiting
+- menus
+- inventory management
+- repetitive gameplay
+- unnecessary silence
+- failed setup
+- unrelated conversation
+- dead time
 
-6. Some videos are Minecraft minigames.
+6. Do NOT remove setup necessary for understanding
+the story.
 
-7. A minigame introduction commonly begins
-with the spoken word "Minecraft", such as:
+7. Keep important dialogue.
+
+8. Do not cut in the middle of an important sentence.
+
+9. Keep funny reactions.
+
+10. Keep surprising moments.
+
+11. Keep enough context so viewers understand
+what is happening.
+
+==================================================
+MINECRAFT MINIGAME DETECTION
+==================================================
+
+Some uploads are Minecraft minigames.
+
+The spoken introduction commonly begins with
+the word "Minecraft".
+
+Examples include:
 "Minecraft Arrow Toss"
 "Minecraft Take It or Leave It"
 
-8. If the video is a minigame, identify the
-game from the actual video/transcript.
-Do NOT assume every Minecraft video is
-the same minigame.
+These are EXAMPLES ONLY.
 
-9. Preserve:
-- the challenge/setup
+If the creator says "Minecraft..." and then
+introduces a game/challenge, use the actual
+spoken introduction and the rest of the video
+to understand what the minigame is.
+
+Do NOT assume every video is the same game.
+
+For minigames preserve:
+- the challenge
 - necessary rules
-- important choices
+- important decisions
 - meaningful attempts
-- funny dialogue
-- reactions
-- the payoff/result
+- funny interactions
+- important reactions
+- the final result/payoff
 
-10. Create a SHORT HEADER/HORIZONTAL HOOK
-for approximately the opening 3 seconds.
+==================================================
+OPENING HEADER / HOOK
+==================================================
 
-11. The hook MUST match what ACTUALLY happens
-in the whole video.
+Generate ONE short opening header.
 
-12. Never invent an event that does not occur.
+The header appears during approximately the
+first 3 seconds of the FINAL edited video.
 
-13. Make the hook interesting without fully
-spoiling the payoff when possible.
+CRITICAL:
+The header must match the WHOLE video.
 
-14. Hook should normally be 3-8 words.
+Do not generate the header based only on the
+opening.
 
-15. Examples of STYLE only:
+First understand the entire story and payoff.
+
+The header should:
+- be 3-8 words when possible
+- be instantly understandable
+- create curiosity
+- accurately describe/tease the video
+- match the actual payoff
+- avoid falsely claiming something happened
+- avoid unnecessarily spoiling the ending
+
+Examples of STYLE only:
+
 "HE RISKED ALL HIS DIAMONDS 😭"
 "CAN I ACTUALLY HIT THIS?!"
 "THIS GOT OUT OF CONTROL..."
-Do not copy these unless accurate.
+"THAT WAS NOT THE PLAN 💀"
 
-16. Keep the final edit energetic.
-Usually aim for 15-45 seconds when the
-source supports that, but story coherence
-is more important than forcing a length.
+Do NOT copy these unless they genuinely match
+the uploaded video.
 
-17. Do not cut mid-sentence unless necessary.
+==================================================
+MEME EDITING
+==================================================
 
-18. Return ONLY valid JSON.
+You may add 0 to 3 meme-style captions.
 
-JSON FORMAT:
+Memes are OPTIONAL.
+
+Do not force a meme into the video.
+
+A meme should only be added when it genuinely
+matches a funny, awkward, surprising, embarrassing,
+unlucky, chaotic, confusing, or dramatic moment.
+
+The meme must make sense based on what actually
+happens in the video.
+
+Meme captions should usually be 1-7 words.
+
+Keep them family-friendly.
+
+Do not use sexual, hateful, political,
+drug-related, or explicit meme references.
+
+Do not use offensive slurs.
+
+Do not add a meme over important information
+the viewer needs to read.
+
+Do not add a meme while the opening hook is
+on screen unless it is absolutely necessary.
+
+Prefer meme moments AFTER the opening 3 seconds.
+
+Do not spoil the ending before it happens.
+
+Examples of meme STYLE:
+
+"bro had ONE job 💀"
+"well... that happened"
+"ain't no way 😭"
+"mission failed 💀"
+"bro really thought 💀"
+"perfectly calculated 😎"
+"that was personal 😭"
+"famous last words..."
+"instant regret 💀"
+"task failed successfully"
+
+These are examples of tone only.
+
+Choose wording that actually fits the video.
+
+IMPORTANT:
+The meme timestamps you return must refer to
+the ORIGINAL uploaded video's timeline.
+
+For each meme return:
+- text
+- original source timestamp
+- duration
+- reason
+
+Use approximately 1.0 to 2.5 seconds per meme.
+
+==================================================
+FINAL LENGTH
+==================================================
+
+Keep the final edit energetic.
+
+Usually aim for approximately 15-45 seconds
+when the source material supports it.
+
+Story coherence is more important than forcing
+a specific duration.
+
+==================================================
+RETURN FORMAT
+==================================================
+
+Return ONLY valid JSON.
+
+Do not include Markdown.
+
+Use exactly this structure:
 
 {
   "title": "detected game/video title",
   "clipType": "minigame or gameplay",
   "summary": "one sentence explaining the story",
-  "hook": "short accurate hook",
+  "hook": "short accurate opening hook",
   "segments": [
     {
       "start": 0.0,
       "end": 5.5,
       "reason": "why this section matters"
     }
+  ],
+  "memes": [
+    {
+      "text": "meme caption",
+      "timestamp": 8.4,
+      "duration": 1.7,
+      "reason": "why the meme fits"
+    }
   ]
 }
 
-Segment timestamps MUST be within
-0-${duration.toFixed(2)} seconds.
+All segment timestamps and meme timestamps MUST
+be within 0-${duration.toFixed(2)} seconds.
 
-Segments MUST be chronological and
-must not overlap.
+Segments MUST be chronological.
+
+Segments MUST NOT overlap.
+
+Return 0-3 memes.
 `
     }
   ];
 
-  /*
-   * Each frame gets its approximate timestamp
-   * immediately before the image.
-   */
   for (const frame of frames) {
     content.push({
       type: "input_text",
@@ -443,6 +564,10 @@ must not overlap.
     );
   }
 
+  if (!Array.isArray(plan.memes)) {
+    plan.memes = [];
+  }
+
   return plan;
 }
 
@@ -467,10 +592,16 @@ function normalizeSegments(
     }
 
     start =
-      Math.max(0, Math.min(duration, start));
+      Math.max(
+        0,
+        Math.min(duration, start)
+      );
 
     end =
-      Math.max(0, Math.min(duration, end));
+      Math.max(
+        0,
+        Math.min(duration, end)
+      );
 
     if (end - start < 0.35) {
       continue;
@@ -516,6 +647,125 @@ function normalizeSegments(
   return result;
 }
 
+/*
+ * Convert an ORIGINAL video timestamp into
+ * a timestamp on the FINAL edited timeline.
+ *
+ * Example:
+ *
+ * Original sections kept:
+ * 10-15
+ * 30-40
+ *
+ * A meme at original second 34 becomes
+ * second 9 of the final video.
+ */
+function originalTimeToEditedTime(
+  timestamp,
+  segments
+) {
+  let editedOffset = 0;
+
+  for (const segment of segments) {
+    if (
+      timestamp >= segment.start &&
+      timestamp <= segment.end
+    ) {
+      return (
+        editedOffset +
+        (timestamp - segment.start)
+      );
+    }
+
+    editedOffset +=
+      segment.end - segment.start;
+  }
+
+  return null;
+}
+
+function normalizeMemes(
+  memes,
+  segments,
+  sourceDuration
+) {
+  if (!Array.isArray(memes)) {
+    return [];
+  }
+
+  const result = [];
+
+  for (const meme of memes.slice(0, 3)) {
+    const text =
+      String(meme.text || "")
+        .trim()
+        .slice(0, 80);
+
+    let timestamp =
+      Number(meme.timestamp);
+
+    let duration =
+      Number(meme.duration);
+
+    if (!text) {
+      continue;
+    }
+
+    if (!Number.isFinite(timestamp)) {
+      continue;
+    }
+
+    if (
+      timestamp < 0 ||
+      timestamp > sourceDuration
+    ) {
+      continue;
+    }
+
+    if (!Number.isFinite(duration)) {
+      duration = 1.5;
+    }
+
+    duration =
+      Math.max(
+        1,
+        Math.min(2.5, duration)
+      );
+
+    const editedTimestamp =
+      originalTimeToEditedTime(
+        timestamp,
+        segments
+      );
+
+    /*
+     * If AI picked a moment that got removed
+     * from the final edit, don't show the meme.
+     */
+    if (editedTimestamp === null) {
+      continue;
+    }
+
+    /*
+     * Keep memes away from the opening hook.
+     */
+    if (editedTimestamp < 3.2) {
+      continue;
+    }
+
+    result.push({
+      text,
+      originalTimestamp: timestamp,
+      timestamp: editedTimestamp,
+      duration,
+      reason:
+        String(meme.reason || "")
+    });
+  }
+
+  return result.slice(0, 3);
+}
+
 async function cutSegments({
   video,
   segments,
@@ -539,19 +789,18 @@ async function cutSegments({
 
     await run("ffmpeg", [
       "-y",
+
       "-ss",
       String(segment.start),
+
       "-to",
       String(segment.end),
+
       "-i",
       video,
 
       /*
-       * FULL 9:16 FRAME.
-       *
-       * Horizontal video is enlarged until it
-       * fills 1080x1920 and then center-cropped.
-       *
+       * Fill the ENTIRE vertical Short.
        * No black bars.
        */
       "-vf",
@@ -562,15 +811,19 @@ async function cutSegments({
 
       "-c:v",
       "libx264",
+
       "-preset",
       "veryfast",
+
       "-crf",
       "20",
+
       "-pix_fmt",
       "yuv420p",
 
       "-c:a",
       "aac",
+
       "-b:a",
       "192k",
 
@@ -609,36 +862,68 @@ async function concatenateClips(
   );
 
   const output =
-    path.join(directory, "story.mp4");
+    path.join(
+      directory,
+      "story.mp4"
+    );
 
   await run("ffmpeg", [
     "-y",
+
     "-f",
     "concat",
+
     "-safe",
     "0",
+
     "-i",
     listFile,
+
     "-c",
     "copy",
+
     output
   ]);
 
   return output;
 }
 
-function escapeDrawText(text) {
-  return String(text || "")
-    .replace(/\\/g, "\\\\")
-    .replace(/:/g, "\\:")
-    .replace(/'/g, "\\'")
-    .replace(/%/g, "\\%");
+/*
+ * Writing text to temporary files is much
+ * safer than trying to escape every possible
+ * punctuation mark directly inside FFmpeg's
+ * drawtext=text= option.
+ */
+function writeTextFile(
+  directory,
+  filename,
+  text
+) {
+  const file =
+    path.join(directory, filename);
+
+  fs.writeFileSync(
+    file,
+    String(text || ""),
+    "utf8"
+  );
+
+  return file;
 }
 
-async function addHookAndMusic({
+function ffmpegPath(file) {
+  return file
+    .replace(/\\/g, "/")
+    .replace(/:/g, "\\:")
+    .replace(/'/g, "\\'");
+}
+
+async function addHookMemesAndMusic({
   video,
   music,
   hook,
+  memes,
+  directory,
   output
 }) {
   const info =
@@ -647,50 +932,109 @@ async function addHookAndMusic({
   const duration =
     getDuration(info);
 
-  const safeHook =
-    escapeDrawText(
+  const hookFile =
+    writeTextFile(
+      directory,
+      "hook.txt",
       (hook || "WAIT FOR THE END 👀")
         .toUpperCase()
     );
 
+  const videoFilters = [];
+
   /*
-   * Music defaults to 12%.
-   * Voice/game audio stays dominant.
+   * OPENING HOOK
    *
-   * Sidechain compression ducks music
-   * further when original audio becomes loud.
+   * Top portion of screen so it doesn't
+   * completely block the Minecraft action.
    */
-  const filter = [
-    /*
-     * Loop/trim music to final video length.
-     */
-    `[1:a]volume=0.12,atrim=0:${duration},asetpts=N/SR/TB[music]`,
+  videoFilters.push(
+    `drawtext=` +
+    `textfile='${ffmpegPath(hookFile)}':` +
+    `fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:` +
+    `fontcolor=white:` +
+    `fontsize=62:` +
+    `borderw=7:` +
+    `bordercolor=black:` +
+    `x=(w-text_w)/2:` +
+    `y=170:` +
+    `enable='between(t,0,3)'`
+  );
 
-    /*
-     * Use original audio as sidechain so
-     * music backs away during speech/action.
-     */
-    `[music][0:a]sidechaincompress=threshold=0.025:ratio=8:attack=20:release=350[ducked]`,
+  /*
+   * MEME CAPTIONS
+   *
+   * Each meme gets its own text file and
+   * appears at the AI-selected moment.
+   */
+  memes.forEach((meme, index) => {
+    const memeFile =
+      writeTextFile(
+        directory,
+        `meme-${index}.txt`,
+        meme.text
+      );
 
-    /*
-     * Mix original audio + ducked music.
-     */
-    `[0:a][ducked]amix=inputs=2:duration=first:normalize=0[aout]`,
+    const start =
+      Math.max(0, meme.timestamp);
 
-    /*
-     * Header for first ~3 seconds.
-     */
-    `[0:v]drawtext=` +
-      `text='${safeHook}':` +
+    const end =
+      Math.min(
+        duration,
+        start + meme.duration
+      );
+
+    videoFilters.push(
+      `drawtext=` +
+      `textfile='${ffmpegPath(memeFile)}':` +
       `fontfile=/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf:` +
       `fontcolor=white:` +
-      `fontsize=62:` +
-      `borderw=6:` +
+      `fontsize=56:` +
+      `borderw=7:` +
       `bordercolor=black:` +
       `x=(w-text_w)/2:` +
-      `y=170:` +
-      `enable='between(t,0,3)'` +
-      `[vout]`
+      `y=h*0.68:` +
+      `enable='between(t,${start.toFixed(3)},${end.toFixed(3)})'`
+    );
+  });
+
+  const videoChain =
+    videoFilters.join(",");
+
+  /*
+   * Music is intentionally quiet.
+   * Original gameplay/voice should dominate.
+   */
+  const filter = [
+    `[1:a]` +
+      `volume=0.12,` +
+      `atrim=0:${duration},` +
+      `asetpts=N/SR/TB` +
+      `[music]`,
+
+    /*
+     * Duck music whenever the original audio
+     * gets louder.
+     */
+    `[music][0:a]` +
+      `sidechaincompress=` +
+      `threshold=0.025:` +
+      `ratio=8:` +
+      `attack=20:` +
+      `release=350` +
+      `[ducked]`,
+
+    /*
+     * Original audio remains dominant.
+     */
+    `[0:a][ducked]` +
+      `amix=` +
+      `inputs=2:` +
+      `duration=first:` +
+      `normalize=0` +
+      `[aout]`,
+
+    `[0:v]${videoChain}[vout]`
   ].join(";");
 
   await run("ffmpeg", [
@@ -699,11 +1043,9 @@ async function addHookAndMusic({
     "-i",
     video,
 
-    /*
-     * Infinite music loop.
-     */
     "-stream_loop",
     "-1",
+
     "-i",
     music,
 
@@ -721,13 +1063,19 @@ async function addHookAndMusic({
 
     "-c:v",
     "libx264",
+
     "-preset",
     "veryfast",
+
     "-crf",
     "20",
 
+    "-pix_fmt",
+    "yuv420p",
+
     "-c:a",
     "aac",
+
     "-b:a",
     "192k",
 
@@ -738,28 +1086,42 @@ async function addHookAndMusic({
   ]);
 }
 
-app.get("/api/health", async (req, res) => {
-  try {
-    const ffmpeg =
-      await run("ffmpeg", ["-version"]);
+app.get(
+  "/api/health",
+  async (req, res) => {
+    try {
+      const ffmpeg =
+        await run(
+          "ffmpeg",
+          ["-version"]
+        );
 
-    res.json({
-      ok: true,
-      ffmpeg:
-        ffmpeg.split("\n")[0],
-      ai:
-        Boolean(process.env.OPENAI_API_KEY)
-    });
-  } catch (error) {
-    res.status(500).json({
-      ok: false,
-      error: error.message
-    });
+      res.json({
+        ok: true,
+
+        ffmpeg:
+          ffmpeg.split("\n")[0],
+
+        ai:
+          Boolean(
+            process.env.OPENAI_API_KEY
+          ),
+
+        version:
+          "2.1-meme-editor"
+      });
+    } catch (error) {
+      res.status(500).json({
+        ok: false,
+        error: error.message
+      });
+    }
   }
-});
+);
 
 app.post(
   "/api/edit",
+
   upload.fields([
     {
       name: "video",
@@ -770,16 +1132,23 @@ app.post(
       maxCount: 1
     }
   ]),
+
   async (req, res) => {
     const job =
       crypto.randomUUID();
 
     const directory =
-      path.join(WORK_DIR, job);
+      path.join(
+        WORK_DIR,
+        job
+      );
 
-    fs.mkdirSync(directory, {
-      recursive: true
-    });
+    fs.mkdirSync(
+      directory,
+      {
+        recursive: true
+      }
+    );
 
     const video =
       req.files?.video?.[0]?.path;
@@ -792,15 +1161,17 @@ app.post(
       safeDelete(music);
       safeDelete(directory);
 
-      return res.status(400).json({
-        error:
-          "Please upload both a video and background music."
-      });
+      return res
+        .status(400)
+        .json({
+          error:
+            "Please upload both a video and background music."
+        });
     }
 
     try {
       console.log(
-        `[${job}] Starting analysis`
+        `[${job}] Starting full AI analysis`
       );
 
       const info =
@@ -819,47 +1190,76 @@ app.post(
         getVideoDimensions(info);
 
       console.log(
-        `[${job}] Source ${dimensions.width}x${dimensions.height}, ${duration}s`
+        `[${job}] Source: ` +
+        `${dimensions.width}x${dimensions.height}`
+      );
+
+      console.log(
+        `[${job}] Duration: ${duration}s`
       );
 
       /*
-       * AUDIO / SPEECH ANALYSIS
+       * =====================================
+       * SPEECH ANALYSIS
+       * =====================================
        */
-      const audio =
-        path.join(
-          directory,
-          "speech.mp3"
-        );
-
-      await extractAudio(
-        video,
-        audio
-      );
 
       let transcript = {
         text: "",
         segments: []
       };
 
-      try {
-        transcript =
-          await transcribeAudio(audio);
-      } catch (error) {
-        console.error(
-          "Transcription failed:",
-          error.message
-        );
+      if (hasAudio(info)) {
+        const audio =
+          path.join(
+            directory,
+            "speech.mp3"
+          );
+
+        try {
+          await extractAudio(
+            video,
+            audio
+          );
+
+          transcript =
+            await transcribeAudio(
+              audio
+            );
+
+          console.log(
+            `[${job}] Transcript created`
+          );
+        } catch (error) {
+          console.error(
+            `[${job}] Transcription failed:`,
+            error.message
+          );
+        }
       }
 
       /*
-       * VISUAL ANALYSIS ACROSS WHOLE VIDEO
+       * =====================================
+       * WHOLE-VIDEO VISUAL ANALYSIS
+       * =====================================
        */
+
       const frames =
         await extractAnalysisFrames(
           video,
           duration,
           directory
         );
+
+      console.log(
+        `[${job}] Extracted ${frames.length} analysis frames`
+      );
+
+      /*
+       * =====================================
+       * STORY + HOOK + MEME DECISIONS
+       * =====================================
+       */
 
       let plan;
 
@@ -872,7 +1272,7 @@ app.post(
           });
       } catch (error) {
         console.error(
-          "AI analysis failed:",
+          `[${job}] AI analysis failed:`,
           error.message
         );
 
@@ -886,9 +1286,25 @@ app.post(
           duration
         );
 
+      /*
+       * Convert meme times from the ORIGINAL
+       * clip to the FINAL edited timeline.
+       */
+      const memes =
+        normalizeMemes(
+          plan.memes,
+          segments,
+          duration
+        );
+
       console.log(
         `[${job}] Detected type:`,
         plan.clipType
+      );
+
+      console.log(
+        `[${job}] Title:`,
+        plan.title
       );
 
       console.log(
@@ -901,9 +1317,17 @@ app.post(
         segments
       );
 
+      console.log(
+        `[${job}] Meme edits:`,
+        memes
+      );
+
       /*
-       * CUT + FULL-SCREEN VERTICAL REFRAME
+       * =====================================
+       * CUT VIDEO + 9:16
+       * =====================================
        */
+
       const clips =
         await cutSegments({
           video,
@@ -918,8 +1342,11 @@ app.post(
         );
 
       /*
-       * HOOK + LOW BACKGROUND MUSIC
+       * =====================================
+       * HEADER + MEMES + MUSIC
+       * =====================================
        */
+
       const filename =
         `${job}.mp4`;
 
@@ -929,12 +1356,20 @@ app.post(
           filename
         );
 
-      await addHookAndMusic({
+      await addHookMemesAndMusic({
         video: story,
         music,
         hook: plan.hook,
+        memes,
+        directory,
         output
       });
+
+      /*
+       * =====================================
+       * FINISHED
+       * =====================================
+       */
 
       res.json({
         success: true,
@@ -959,17 +1394,26 @@ app.post(
             plan.hook ||
             "",
 
-          segments
+          segments,
+
+          memes
         }
       });
-    } catch (error) {
-      console.error(error);
 
-      res.status(500).json({
-        error:
-          error.message ||
-          "Video editing failed."
-      });
+    } catch (error) {
+      console.error(
+        `[${job}] Editing failed:`,
+        error
+      );
+
+      res
+        .status(500)
+        .json({
+          error:
+            error.message ||
+            "Video editing failed."
+        });
+
     } finally {
       safeDelete(video);
       safeDelete(music);
@@ -978,16 +1422,24 @@ app.post(
   }
 );
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(
-    `KindCrafted AI Clip Editor running on port ${PORT}`
-  );
+app.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+    console.log(
+      `KindCrafted AI Clip Editor running on port ${PORT}`
+    );
 
-  console.log(
-    `AI analysis: ${
-      process.env.OPENAI_API_KEY
-        ? "enabled"
-        : "disabled"
-    }`
-  );
-});
+    console.log(
+      `AI analysis: ${
+        process.env.OPENAI_API_KEY
+          ? "enabled"
+          : "disabled"
+      }`
+    );
+
+    console.log(
+      "Meme editor: enabled"
+    );
+  }
+);

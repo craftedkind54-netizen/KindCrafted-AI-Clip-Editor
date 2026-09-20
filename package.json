@@ -1,15 +1,11 @@
 {
   "name": "kindcrafted-ai-clip-editor",
-  "version": "3.0.0",
-  "description": "KindCrafted AI Clip Editor for analyzing and editing gaming clips into vertical YouTube Shorts.",
+  "version": "4.0.0",
+  "description": "AI gaming clip editor for creating vertical YouTube Shorts.",
   "type": "module",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "engines": {
-    "node": ">=20"
-  },
+  "scripts": {"start": "node server.js"},
+  "engines": {"node": ">=20"},
   "dependencies": {
     "express": "^4.21.2",
     "multer": "^1.4.5-lts.1",

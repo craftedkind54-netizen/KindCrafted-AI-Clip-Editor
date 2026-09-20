@@ -17,302 +17,260 @@
 
     body {
       margin: 0;
-      min-height: 100vh;
-
-      font-family:
-        Inter,
-        Arial,
-        Helvetica,
-        sans-serif;
-
-      background:
-        radial-gradient(
-          circle at top,
-          #15254f 0%,
-          #080e20 45%,
-          #050916 100%
-        );
-
+      font-family: Arial, Helvetica, sans-serif;
+      background: #080e20;
       color: white;
     }
 
+    button,
+    input {
+      font: inherit;
+    }
+
     .page {
-      width: min(900px, 92%);
+      width: min(1000px, 94%);
       margin: 0 auto;
-      padding: 60px 0 100px;
+      padding: 40px 0 80px;
     }
 
     .header {
-      text-align: center;
-      margin-bottom: 35px;
+      margin-bottom: 30px;
     }
 
     .header h1 {
       margin: 0;
-
-      font-size: clamp(
-        32px,
-        6vw,
-        54px
-      );
-
-      font-weight: 800;
+      font-size: 38px;
     }
 
     .header p {
-      margin: 14px auto 0;
-
-      max-width: 650px;
-
+      margin-top: 12px;
+      max-width: 760px;
       color: #aebbd9;
-
       font-size: 17px;
       line-height: 1.6;
     }
 
     .card {
-      background:
-        rgba(18, 27, 56, 0.95);
-
-      border:
-        1px solid
-        rgba(255, 255, 255, 0.08);
-
-      border-radius: 22px;
-
-      padding: 30px;
-
-      box-shadow:
-        0 20px 60px
-        rgba(0, 0, 0, 0.35);
+      background: #121b38;
+      border: 1px solid #253258;
+      border-radius: 18px;
+      padding: 26px;
+      margin-bottom: 22px;
     }
 
-    .section {
-      margin-bottom: 28px;
+    .card h2 {
+      margin-top: 0;
+      margin-bottom: 8px;
     }
 
-    .section:last-child {
-      margin-bottom: 0;
+    .card-description {
+      color: #9eacd0;
+      margin-top: 0;
+      line-height: 1.5;
     }
 
-    label {
+    .field {
+      margin-top: 22px;
+    }
+
+    .field label {
       display: block;
-
-      font-size: 18px;
+      margin-bottom: 8px;
       font-weight: 700;
+      font-size: 16px;
+    }
 
-      margin-bottom: 10px;
+    .required,
+    .optional {
+      margin-left: 6px;
+      font-size: 11px;
+      font-weight: 700;
     }
 
     .required {
-      color: #8ca9ff;
-      font-size: 13px;
-      margin-left: 6px;
+      color: #9cb1ff;
     }
 
     .optional {
       color: #8fa1c7;
-      font-size: 13px;
-      margin-left: 6px;
     }
 
-    .description {
-      color: #9cabcc;
-
+    .hint {
+      margin: 0 0 10px;
+      color: #9eacd0;
       font-size: 14px;
-
-      margin-bottom: 12px;
-
       line-height: 1.5;
     }
 
-    input[type="file"] {
+    input[type="file"],
+    input[type="text"] {
       width: 100%;
-
+      padding: 13px;
+      border: 1px solid #34436d;
+      border-radius: 10px;
       background: #090f23;
-
       color: white;
-
-      border:
-        1px solid #26345c;
-
-      border-radius: 12px;
-
-      padding: 14px;
-
-      cursor: pointer;
     }
 
-    button {
+    input[type="text"]::placeholder {
+      color: #69799e;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .settings {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 22px;
+    }
+
+    .setting {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #c7d1e9;
+    }
+
+    .setting input {
+      width: 18px;
+      height: 18px;
+    }
+
+    .button {
       width: 100%;
-
-      border: 0;
-
-      border-radius: 13px;
-
-      padding: 16px 20px;
-
-      font-size: 17px;
-      font-weight: 800;
-
-      cursor: pointer;
-
-      background:
-        linear-gradient(
-          135deg,
-          #5479ff,
-          #7a5cff
-        );
-
+      margin-top: 25px;
+      padding: 16px;
+      border: none;
+      border-radius: 11px;
+      background: #617fff;
       color: white;
-
-      transition:
-        transform 0.15s ease,
-        opacity 0.15s ease;
+      font-weight: 800;
+      font-size: 17px;
+      cursor: pointer;
     }
 
-    button:hover {
-      transform:
-        translateY(-1px);
+    .button:hover {
+      opacity: 0.92;
     }
 
-    button:disabled {
+    .button:disabled {
       opacity: 0.55;
       cursor: not-allowed;
-      transform: none;
-    }
-
-    .features {
-      margin-top: 25px;
-
-      display: grid;
-
-      grid-template-columns:
-        repeat(
-          auto-fit,
-          minmax(180px, 1fr)
-        );
-
-      gap: 12px;
-    }
-
-    .feature {
-      background:
-        rgba(255, 255, 255, 0.035);
-
-      border:
-        1px solid
-        rgba(255, 255, 255, 0.06);
-
-      border-radius: 13px;
-
-      padding: 15px;
-
-      color: #afbddb;
-
-      font-size: 14px;
     }
 
     .status {
       display: none;
-
-      margin-top: 22px;
-
-      border-radius: 13px;
-
+      margin-top: 20px;
       padding: 16px;
-
-      line-height: 1.5;
+      border: 1px solid #2b3b68;
+      border-radius: 11px;
+      background: #0b1329;
+      color: #c8d5f4;
+      line-height: 1.6;
+      white-space: pre-line;
     }
 
-    .status.processing {
+    .status.show {
       display: block;
-
-      background:
-        rgba(74, 111, 255, 0.12);
-
-      border:
-        1px solid
-        rgba(74, 111, 255, 0.35);
-
-      color: #b9c9ff;
     }
 
-    .status.success {
-      display: block;
-
-      background:
-        rgba(56, 211, 159, 0.12);
-
-      border:
-        1px solid
-        rgba(56, 211, 159, 0.35);
-
-      color: #a8f0d4;
+    .analysis {
+      display: none;
+      margin-top: 20px;
+      padding: 20px;
+      border: 1px solid #2b3b68;
+      border-radius: 11px;
+      background: #0b1329;
     }
 
-    .status.error {
+    .analysis.show {
       display: block;
+    }
 
-      background:
-        rgba(255, 80, 100, 0.12);
+    .analysis h3 {
+      margin-top: 0;
+    }
 
-      border:
-        1px solid
-        rgba(255, 80, 100, 0.35);
+    .analysis-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
 
-      color: #ffb3bd;
+    .analysis-item {
+      padding: 13px;
+      border-radius: 9px;
+      background: #121b38;
+    }
+
+    .analysis-label {
+      color: #8999bd;
+      font-size: 12px;
+      margin-bottom: 5px;
+    }
+
+    .analysis-value {
+      font-weight: 700;
     }
 
     .download {
       display: none;
+      margin-top: 20px;
+    }
 
-      margin-top: 15px;
-
-      text-align: center;
+    .download.show {
+      display: block;
     }
 
     .download a {
-      display: inline-block;
-
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border-radius: 11px;
+      background: #32cf9b;
+      color: #07140f;
+      text-align: center;
       text-decoration: none;
-
-      background: #28c995;
-
-      color: #061510;
-
-      padding: 14px 24px;
-
-      border-radius: 12px;
-
       font-weight: 800;
     }
 
-    .music-note {
-      margin-top: 10px;
+    .feature-grid {
+      display: grid;
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
 
-      padding: 11px 13px;
-
-      background:
-        rgba(255, 255, 255, 0.035);
-
-      border-radius: 9px;
-
-      color: #8fa1c7;
-
-      font-size: 13px;
-
+    .feature {
+      padding: 14px;
+      border: 1px solid #26345b;
+      border-radius: 10px;
+      background: #0c142b;
+      color: #bac6e3;
       line-height: 1.5;
     }
 
-    .footer {
-      margin-top: 28px;
+    .feature strong {
+      color: white;
+    }
 
-      text-align: center;
+    @media (max-width: 700px) {
+      .grid,
+      .analysis-grid,
+      .feature-grid {
+        grid-template-columns: 1fr;
+      }
 
-      color: #66789f;
-
-      font-size: 13px;
+      .header h1 {
+        font-size: 31px;
+      }
     }
   </style>
 </head>
@@ -321,42 +279,58 @@
 
   <main class="page">
 
+    <!-- =========================================
+         HEADER
+    ========================================== -->
+
     <header class="header">
 
       <h1>
-        🎬 KindCrafted AI Clip Editor
+        KindCrafted AI Clip Editor
       </h1>
 
       <p>
-        Upload your clip and let the editor
-        prepare a vertical video automatically.
-        Background music is completely optional.
+        Upload your clip and let the editor analyze
+        the actual video before editing it into a
+        full-screen vertical Short.
       </p>
 
     </header>
 
+
+    <!-- =========================================
+         UPLOAD + EDITOR
+    ========================================== -->
+
     <section class="card">
 
-      <form
-        id="editorForm"
-        enctype="multipart/form-data"
-      >
+      <h2>
+        Create Your Short
+      </h2>
+
+      <p class="card-description">
+        Your video is required. Background music is
+        completely optional.
+      </p>
+
+      <form id="editorForm">
 
         <!-- VIDEO -->
 
-        <div class="section">
+        <div class="field">
 
           <label for="video">
-            🎬 Video clip
+            Video Clip
 
             <span class="required">
               REQUIRED
             </span>
           </label>
 
-          <div class="description">
-            Choose the clip you want to edit.
-          </div>
+          <p class="hint">
+            Select the Minecraft or gaming clip you
+            want the editor to analyze.
+          </p>
 
           <input
             id="video"
@@ -371,20 +345,21 @@
 
         <!-- MUSIC -->
 
-        <div class="section">
+        <div class="field">
 
           <label for="music">
-            🎵 Background music
+            Background Music
 
             <span class="optional">
               OPTIONAL
             </span>
           </label>
 
-          <div class="description">
-            You can leave this completely blank.
-            Your clip will still process normally.
-          </div>
+          <p class="hint">
+            Leave this blank if you do not want music.
+            Your video's original audio will still be
+            kept.
+          </p>
 
           <input
             id="music"
@@ -393,39 +368,144 @@
             accept="audio/*"
           />
 
-          <div class="music-note">
+        </div>
 
-            <strong>No music selected:</strong>
-            your video's original audio is kept.
 
-            <br />
+        <!-- =====================================
+             HEADING + MEME EDITOR
+        ====================================== -->
 
-            <strong>Music selected:</strong>
-            the editor adds it underneath your
-            original audio and fades it near the end.
+        <div class="grid">
+
+          <div class="field">
+
+            <label for="heading">
+              Video Heading
+
+              <span class="optional">
+                OPTIONAL
+              </span>
+            </label>
+
+            <p class="hint">
+              Adds a heading near the top of the Short.
+            </p>
+
+            <input
+              id="heading"
+              name="heading"
+              type="text"
+              maxlength="120"
+              placeholder="Example: I almost lost EVERYTHING"
+            />
+
+          </div>
+
+
+          <div class="field">
+
+            <label for="memeTop">
+              Meme Top Text
+
+              <span class="optional">
+                OPTIONAL
+              </span>
+            </label>
+
+            <p class="hint">
+              Optional meme-style text near the top.
+            </p>
+
+            <input
+              id="memeTop"
+              name="memeTop"
+              type="text"
+              maxlength="120"
+              placeholder="Top meme text"
+            />
 
           </div>
 
         </div>
 
 
-        <!-- SUBMIT -->
+        <div class="field">
 
-        <div class="section">
+          <label for="memeBottom">
+            Meme Bottom Text
 
-          <button
-            id="submitButton"
-            type="submit"
-          >
-            ✨ Edit My Clip
-          </button>
+            <span class="optional">
+              OPTIONAL
+            </span>
+          </label>
+
+          <p class="hint">
+            Optional meme-style text near the bottom.
+          </p>
+
+          <input
+            id="memeBottom"
+            name="memeBottom"
+            type="text"
+            maxlength="120"
+            placeholder="Bottom meme text"
+          />
 
         </div>
+
+
+        <!-- =====================================
+             EDIT SETTINGS
+        ====================================== -->
+
+        <div class="settings">
+
+          <label class="setting">
+
+            <input
+              id="autoZoom"
+              type="checkbox"
+              checked
+            />
+
+            Automatic zoom / motion
+
+          </label>
+
+
+          <label class="setting">
+
+            <input
+              id="analyzeSilence"
+              type="checkbox"
+              checked
+            />
+
+            Analyze silence
+
+          </label>
+
+        </div>
+
+
+        <!-- =====================================
+             BUTTON
+        ====================================== -->
+
+        <button
+          id="editButton"
+          class="button"
+          type="submit"
+        >
+          Analyze & Edit My Clip
+        </button>
 
       </form>
 
 
-      <!-- STATUS -->
+      <!-- =====================================
+           STATUS
+      ====================================== -->
 
       <div
         id="status"
@@ -433,7 +513,123 @@
       ></div>
 
 
-      <!-- DOWNLOAD -->
+      <!-- =====================================
+           ANALYSIS RESULTS
+      ====================================== -->
+
+      <div
+        id="analysis"
+        class="analysis"
+      >
+
+        <h3>
+          Video Analysis
+        </h3>
+
+        <div class="analysis-grid">
+
+          <div class="analysis-item">
+
+            <div class="analysis-label">
+              ORIGINAL DURATION
+            </div>
+
+            <div
+              id="durationResult"
+              class="analysis-value"
+            >
+              —
+            </div>
+
+          </div>
+
+
+          <div class="analysis-item">
+
+            <div class="analysis-label">
+              ORIGINAL RESOLUTION
+            </div>
+
+            <div
+              id="resolutionResult"
+              class="analysis-value"
+            >
+              —
+            </div>
+
+          </div>
+
+
+          <div class="analysis-item">
+
+            <div class="analysis-label">
+              ORIGINAL AUDIO
+            </div>
+
+            <div
+              id="audioResult"
+              class="analysis-value"
+            >
+              —
+            </div>
+
+          </div>
+
+
+          <div class="analysis-item">
+
+            <div class="analysis-label">
+              SILENCE SECTIONS
+            </div>
+
+            <div
+              id="silenceResult"
+              class="analysis-value"
+            >
+              —
+            </div>
+
+          </div>
+
+
+          <div class="analysis-item">
+
+            <div class="analysis-label">
+              BACKGROUND MUSIC
+            </div>
+
+            <div
+              id="musicResult"
+              class="analysis-value"
+            >
+              —
+            </div>
+
+          </div>
+
+
+          <div class="analysis-item">
+
+            <div class="analysis-label">
+              OUTPUT FORMAT
+            </div>
+
+            <div
+              class="analysis-value"
+            >
+              1080 × 1920 • 9:16
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <!-- =====================================
+           DOWNLOAD
+      ====================================== -->
 
       <div
         id="download"
@@ -445,56 +641,89 @@
           href="#"
           download
         >
-          ⬇️ Download Edited Clip
+          Download Edited MP4
         </a>
-
-      </div>
-
-
-      <!-- FEATURES -->
-
-      <div class="features">
-
-        <div class="feature">
-          📱 Converts clips to
-          <strong>9:16</strong>
-        </div>
-
-        <div class="feature">
-          🔊 Keeps original audio
-        </div>
-
-        <div class="feature">
-          🎵 Music is optional
-        </div>
-
-        <div class="feature">
-          🎚️ Music stays quieter
-          than the clip
-        </div>
-
-        <div class="feature">
-          🔁 Music automatically loops
-          when needed
-        </div>
-
-        <div class="feature">
-          🌫️ Music fades near the end
-        </div>
 
       </div>
 
     </section>
 
 
-    <div class="footer">
-      KindCrafted AI Clip Editor
-    </div>
+    <!-- =========================================
+         WHAT THE EDITOR DOES
+    ========================================== -->
+
+    <section class="card">
+
+      <h2>
+        Automatic Editing
+      </h2>
+
+      <p class="card-description">
+        The editor analyzes the uploaded video before
+        creating the finished Short.
+      </p>
+
+      <div class="feature-grid">
+
+        <div class="feature">
+          📐 <strong>9:16 Fill</strong><br />
+          Scales and crops the video to completely
+          fill 1080 × 1920.
+        </div>
+
+        <div class="feature">
+          ⏱️ <strong>Real Duration</strong><br />
+          Uses the actual video duration so music
+          cannot accidentally make the output longer.
+        </div>
+
+        <div class="feature">
+          🔊 <strong>Original Audio</strong><br />
+          Keeps the original video's audio.
+        </div>
+
+        <div class="feature">
+          🎵 <strong>Optional Music</strong><br />
+          Music is only added when you select a music
+          file.
+        </div>
+
+        <div class="feature">
+          🎚️ <strong>Music Ducking</strong><br />
+          Background music is lowered beneath the
+          video's original audio.
+        </div>
+
+        <div class="feature">
+          🔁 <strong>Music Looping</strong><br />
+          Short music automatically loops but stops
+          when the video ends.
+        </div>
+
+        <div class="feature">
+          🔍 <strong>Automatic Motion</strong><br />
+          Adds gentle zoom/motion to the vertical edit.
+        </div>
+
+        <div class="feature">
+          🔇 <strong>Silence Analysis</strong><br />
+          Detects quiet sections in the original
+          video's audio.
+        </div>
+
+      </div>
+
+    </section>
 
   </main>
 
 
   <script>
+
+    // ============================================
+    // ELEMENTS
+    // ============================================
 
     const form =
       document.getElementById(
@@ -511,17 +740,22 @@
         "music"
       );
 
-    const button =
+    const editButton =
       document.getElementById(
-        "submitButton"
+        "editButton"
       );
 
-    const status =
+    const statusBox =
       document.getElementById(
         "status"
       );
 
-    const download =
+    const analysisBox =
+      document.getElementById(
+        "analysis"
+      );
+
+    const downloadBox =
       document.getElementById(
         "download"
       );
@@ -532,19 +766,25 @@
       );
 
 
-    function showStatus(
-      type,
-      message
-    ) {
+    // ============================================
+    // STATUS
+    // ============================================
 
-      status.className =
-        `status ${type}`;
+    function showStatus(message) {
 
-      status.textContent =
+      statusBox.textContent =
         message;
+
+      statusBox.classList.add(
+        "show"
+      );
 
     }
 
+
+    // ============================================
+    // SUBMIT
+    // ============================================
 
     form.addEventListener(
       "submit",
@@ -553,13 +793,10 @@
 
         event.preventDefault();
 
-        download.style.display =
-          "none";
 
-
-        // -------------------------
-        // ONLY VIDEO IS REQUIRED
-        // -------------------------
+        // ========================================
+        // VIDEO IS THE ONLY REQUIRED FILE
+        // ========================================
 
         if (
           !videoInput.files ||
@@ -567,7 +804,6 @@
         ) {
 
           showStatus(
-            "error",
             "Please choose a video clip."
           );
 
@@ -575,13 +811,9 @@
         }
 
 
-        const videoFile =
-          videoInput.files[0];
-
-
-        // -------------------------
-        // CREATE FORM DATA
-        // -------------------------
+        // ========================================
+        // FORM DATA
+        // ========================================
 
         const formData =
           new FormData();
@@ -589,13 +821,13 @@
 
         formData.append(
           "video",
-          videoFile
+          videoInput.files[0]
         );
 
 
-        // -------------------------
-        // MUSIC IS OPTIONAL
-        // -------------------------
+        // ========================================
+        // MUSIC IS COMPLETELY OPTIONAL
+        // ========================================
 
         if (
           musicInput.files &&
@@ -610,44 +842,99 @@
         }
 
 
-        // -------------------------
-        // PROCESS
-        // -------------------------
+        // ========================================
+        // HEADING
+        // ========================================
 
-        button.disabled =
+        formData.append(
+          "heading",
+
+          document.getElementById(
+            "heading"
+          ).value
+        );
+
+
+        // ========================================
+        // MEME TEXT
+        // ========================================
+
+        formData.append(
+          "memeTop",
+
+          document.getElementById(
+            "memeTop"
+          ).value
+        );
+
+
+        formData.append(
+          "memeBottom",
+
+          document.getElementById(
+            "memeBottom"
+          ).value
+        );
+
+
+        // ========================================
+        // AUTOMATIC MOTION
+        // ========================================
+
+        formData.append(
+          "autoZoom",
+
+          String(
+            document.getElementById(
+              "autoZoom"
+            ).checked
+          )
+        );
+
+
+        // ========================================
+        // UI
+        // ========================================
+
+        editButton.disabled =
           true;
 
-        button.textContent =
-          "⏳ Editing Clip...";
+        editButton.textContent =
+          "Analyzing & Editing...";
 
 
-        if (
-          musicInput.files.length > 0
-        ) {
+        analysisBox.classList.remove(
+          "show"
+        );
 
-          showStatus(
-            "processing",
-            "Editing your clip and adding background music..."
-          );
+        downloadBox.classList.remove(
+          "show"
+        );
 
-        } else {
 
-          showStatus(
-            "processing",
-            "Editing your clip without background music..."
-          );
-
-        }
+        showStatus(
+          "Analyzing your actual video...\n\n" +
+          "Checking duration, resolution, audio, and silence.\n\n" +
+          "Then creating the full-screen 9:16 edit."
+        );
 
 
         try {
 
+          // ======================================
+          // SEND TO SERVER
+          // ======================================
+
           const response =
             await fetch(
               "/api/edit",
+
               {
-                method: "POST",
-                body: formData
+                method:
+                  "POST",
+
+                body:
+                  formData,
               }
             );
 
@@ -673,61 +960,103 @@
 
             throw new Error(
               data.error ||
-              "The clip could not be edited."
+              "The video could not be edited."
             );
 
           }
 
 
-          // -------------------------
-          // SUCCESS
-          // -------------------------
+          // ======================================
+          // ANALYSIS RESULTS
+          // ======================================
 
-          if (data.musicAdded) {
+          const videoAnalysis =
+            data.analysis || {};
 
-            showStatus(
-              "success",
-              "✅ Your clip is finished! Background music was added."
-            );
 
-          } else {
+          document.getElementById(
+            "durationResult"
+          ).textContent =
+            `${Number(
+              data.duration
+            ).toFixed(2)} seconds`;
 
-            showStatus(
-              "success",
-              "✅ Your clip is finished! No background music was added."
-            );
 
-          }
+          document.getElementById(
+            "resolutionResult"
+          ).textContent =
+            `${videoAnalysis.width || "?"} × ${videoAnalysis.height || "?"}`;
 
+
+          document.getElementById(
+            "audioResult"
+          ).textContent =
+            videoAnalysis.hasAudio
+              ? "Detected"
+              : "No audio detected";
+
+
+          document.getElementById(
+            "silenceResult"
+          ).textContent =
+            `${
+              (
+                videoAnalysis.silence ||
+                []
+              ).length
+            } detected`;
+
+
+          document.getElementById(
+            "musicResult"
+          ).textContent =
+            data.musicAdded
+              ? "Added"
+              : "Not added";
+
+
+          analysisBox.classList.add(
+            "show"
+          );
+
+
+          // ======================================
+          // FINISHED
+          // ======================================
+
+          showStatus(
+            "Finished!\n\n" +
+            "The video keeps its real duration and fills the 1080 × 1920 Shorts frame."
+          );
+
+
+          // ======================================
+          // DOWNLOAD
+          // ======================================
 
           downloadLink.href =
             data.url;
 
-          downloadLink.setAttribute(
-            "download",
-            ""
+          downloadBox.classList.add(
+            "show"
           );
-
-          download.style.display =
-            "block";
-
 
         } catch (error) {
 
           console.error(error);
 
+
           showStatus(
-            "error",
-            `❌ ${error.message}`
+            `Error: ${error.message}`
           );
 
         } finally {
 
-          button.disabled =
+          editButton.disabled =
             false;
 
-          button.textContent =
-            "✨ Edit My Clip";
+          editButton.textContent =
+            "Analyze & Edit My Clip";
 
         }
 

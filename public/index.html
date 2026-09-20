@@ -1,1 +1,550 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>KindCrafted AI Clip Editor</title><style>*{box-sizing:border-box}body{margin:0;font-family:Inter,Arial;background:#07101f;color:#fff;min-height:100vh;display:grid;place-items:center}.card{width:min(720px,92%);background:#101c31;border:1px solid #263754;border-radius:24px;padding:34px;box-shadow:0 25px 80px #0008}h1{margin:0 0 8px;font-size:34px}p{color:#afbdd3;line-height:1.5}.grid{display:grid;gap:18px;margin:28px 0}label{background:#0a1528;padding:18px;border-radius:16px;border:1px solid #263754;font-weight:700}input{display:block;margin-top:12px;width:100%}button{width:100%;border:0;border-radius:14px;padding:16px;font-weight:800;font-size:17px;background:#4bb7ff;color:#04111d;cursor:pointer}button:disabled{opacity:.5}.status{margin-top:18px;white-space:pre-wrap;color:#cbd7e8}a{color:#65c6ff}</style></head><body><main class="card"><h1>KindCrafted AI Clip Editor</h1><p>Upload your clip and background music. Version 1 automatically makes a 9:16 MP4, loops/trims the music to fit, keeps it low beneath your original audio, and fades the music at the ending.</p><form id="f"><div class="grid"><label>🎬 Video clip<input required name="video" type="file" accept="video/*"></label><label>🎵 Background music<input required name="music" type="file" accept="audio/*"></label></div><button id="b">Edit My Clip</button></form><div class="status" id="s"></div></main><script>const f=document.querySelector('#f'),b=document.querySelector('#b'),s=document.querySelector('#s');f.onsubmit=async e=>{e.preventDefault();b.disabled=true;s.textContent='Editing… This can take a few minutes.';try{const r=await fetch('/api/edit',{method:'POST',body:new FormData(f)}),j=await r.json();if(!r.ok)throw Error(j.error);s.innerHTML=`Done! 🎉 <a href="${j.url}" download>Download edited MP4</a>`}catch(x){s.textContent='Error: '+x.message}finally{b.disabled=false}};</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>
+    KindCrafted AI Clip Editor
+  </title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family:
+        Inter,
+        Arial,
+        Helvetica,
+        sans-serif;
+      background:
+        radial-gradient(
+          circle at top,
+          #182b52,
+          #071020 55%
+        );
+      color: white;
+    }
+
+    .page {
+      width: min(850px, 92%);
+      margin: 0 auto;
+      padding: 55px 0 90px;
+    }
+
+    .hero {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(
+        32px,
+        6vw,
+        55px
+      );
+    }
+
+    .subtitle {
+      color: #aebbd1;
+      font-size: 18px;
+      line-height: 1.6;
+      max-width: 650px;
+      margin:
+        15px auto 0;
+    }
+
+    .badge {
+      display: inline-block;
+      margin-top: 15px;
+      padding: 7px 13px;
+      border-radius: 999px;
+      background: #162a4a;
+      color: #7db5ff;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .card {
+      background:
+        rgba(14, 27, 49, 0.96);
+      border:
+        1px solid #263c61;
+      border-radius: 18px;
+      padding: 28px;
+      box-shadow:
+        0 20px 60px
+        rgba(0, 0, 0, 0.28);
+    }
+
+    .field {
+      margin-bottom: 24px;
+    }
+
+    label {
+      display: block;
+      font-weight: 800;
+      margin-bottom: 9px;
+    }
+
+    .hint {
+      color: #8495af;
+      font-size: 14px;
+      margin-bottom: 9px;
+      line-height: 1.5;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border-radius: 10px;
+      border:
+        1px solid #31496d;
+      background: #071224;
+      color: #cbd6e8;
+    }
+
+    button {
+      width: 100%;
+      border: 0;
+      border-radius: 10px;
+      padding: 15px;
+      background: #1686ff;
+      color: white;
+      font-size: 17px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #071224;
+      color: #9eb0c9;
+      display: none;
+      line-height: 1.5;
+    }
+
+    .result {
+      display: none;
+      margin-top: 25px;
+    }
+
+    .result h2 {
+      margin-top: 0;
+    }
+
+    .analysis {
+      display: grid;
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+
+    .analysis-box {
+      background: #09172a;
+      border:
+        1px solid #253b5d;
+      border-radius: 12px;
+      padding: 15px;
+    }
+
+    .analysis-title {
+      color: #8397b5;
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+    }
+
+    .analysis-value {
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    video {
+      display: block;
+      width: min(100%, 360px);
+      max-height: 640px;
+      margin:
+        20px auto;
+      border-radius: 14px;
+      background: black;
+    }
+
+    .download {
+      display: block;
+      text-align: center;
+      text-decoration: none;
+      background: #18a865;
+      color: white;
+      font-weight: 800;
+      padding: 14px;
+      border-radius: 10px;
+    }
+
+    .steps {
+      margin-top: 28px;
+      color: #8294ae;
+      line-height: 1.8;
+      font-size: 14px;
+    }
+
+    .error {
+      color: #ff9b9b !important;
+      border:
+        1px solid #7d3030;
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="page">
+
+    <section class="hero">
+
+      <h1>
+        🎬 KindCrafted AI Clip Editor
+      </h1>
+
+      <p class="subtitle">
+        Upload your Minecraft footage and music.
+        AI watches the entire clip, understands
+        the story, removes unnecessary moments,
+        generates a matching hook, fills the
+        vertical frame, and mixes quieter music.
+      </p>
+
+      <div class="badge">
+        AI STORY EDITING • 9:16 • 1080×1920
+      </div>
+
+    </section>
+
+    <section class="card">
+
+      <form id="editorForm">
+
+        <div class="field">
+
+          <label for="video">
+            🎮 Minecraft footage
+          </label>
+
+          <div class="hint">
+            Upload the complete clip. Don't cut
+            out the setup or ending first—the AI
+            needs the entire story.
+          </div>
+
+          <input
+            id="video"
+            name="video"
+            type="file"
+            accept="video/*"
+            required
+          />
+
+        </div>
+
+        <div class="field">
+
+          <label for="music">
+            🎵 Background music
+          </label>
+
+          <div class="hint">
+            Music is automatically looped/trimmed
+            and kept around 12% volume. It ducks
+            further when your original audio is
+            active.
+          </div>
+
+          <input
+            id="music"
+            name="music"
+            type="file"
+            accept="audio/*"
+            required
+          />
+
+        </div>
+
+        <button
+          id="submitButton"
+          type="submit"
+        >
+          ✨ AI Edit My Short
+        </button>
+
+      </form>
+
+      <div id="status"></div>
+
+      <section
+        id="result"
+        class="result"
+      >
+
+        <h2>
+          Your edited Short
+        </h2>
+
+        <div class="analysis">
+
+          <div class="analysis-box">
+            <div class="analysis-title">
+              Detected video
+            </div>
+            <div
+              id="detectedTitle"
+              class="analysis-value"
+            ></div>
+          </div>
+
+          <div class="analysis-box">
+            <div class="analysis-title">
+              AI hook
+            </div>
+            <div
+              id="hook"
+              class="analysis-value"
+            ></div>
+          </div>
+
+          <div class="analysis-box">
+            <div class="analysis-title">
+              Story
+            </div>
+            <div
+              id="summary"
+              class="analysis-value"
+            ></div>
+          </div>
+
+          <div class="analysis-box">
+            <div class="analysis-title">
+              Sections kept
+            </div>
+            <div
+              id="segments"
+              class="analysis-value"
+            ></div>
+          </div>
+
+        </div>
+
+        <video
+          id="preview"
+          controls
+          playsinline
+        ></video>
+
+        <a
+          id="download"
+          class="download"
+          download
+        >
+          ⬇ Download Edited Short
+        </a>
+
+      </section>
+
+      <div class="steps">
+        <strong>Editing logic:</strong><br>
+        1. Listen to the entire clip.<br>
+        2. Inspect frames throughout the video.<br>
+        3. Detect Minecraft/minigame context.<br>
+        4. Find setup, important moments and payoff.<br>
+        5. Remove unrelated/dead footage.<br>
+        6. Create a hook matching the whole story.<br>
+        7. Fill a 1080×1920 vertical frame.<br>
+        8. Mix quieter background music.
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+
+    const form =
+      document.getElementById(
+        "editorForm"
+      );
+
+    const button =
+      document.getElementById(
+        "submitButton"
+      );
+
+    const status =
+      document.getElementById(
+        "status"
+      );
+
+    const result =
+      document.getElementById(
+        "result"
+      );
+
+    const preview =
+      document.getElementById(
+        "preview"
+      );
+
+    const download =
+      document.getElementById(
+        "download"
+      );
+
+    function showStatus(
+      message,
+      isError = false
+    ) {
+      status.style.display =
+        "block";
+
+      status.textContent =
+        message;
+
+      status.classList.toggle(
+        "error",
+        isError
+      );
+    }
+
+    form.addEventListener(
+      "submit",
+      async (event) => {
+
+        event.preventDefault();
+
+        result.style.display =
+          "none";
+
+        button.disabled = true;
+
+        button.textContent =
+          "🧠 AI is watching your clip...";
+
+        showStatus(
+          "Analyzing the whole video. This can take a few minutes for longer clips. Keep this page open."
+        );
+
+        const data =
+          new FormData(form);
+
+        try {
+
+          const response =
+            await fetch(
+              "/api/edit",
+              {
+                method: "POST",
+                body: data
+              }
+            );
+
+          const body =
+            await response.json();
+
+          if (!response.ok) {
+            throw new Error(
+              body.error ||
+              "Editing failed."
+            );
+          }
+
+          showStatus(
+            "✅ AI edit finished!"
+          );
+
+          const analysis =
+            body.analysis || {};
+
+          document.getElementById(
+            "detectedTitle"
+          ).textContent =
+            analysis.title ||
+            "Minecraft Short";
+
+          document.getElementById(
+            "hook"
+          ).textContent =
+            analysis.hook ||
+            "No hook returned";
+
+          document.getElementById(
+            "summary"
+          ).textContent =
+            analysis.summary ||
+            "Finished";
+
+          const segments =
+            analysis.segments || [];
+
+          document.getElementById(
+            "segments"
+          ).textContent =
+            segments
+              .map(
+                (segment) =>
+                  `${segment.start.toFixed(1)}s – ${segment.end.toFixed(1)}s`
+              )
+              .join(" • ");
+
+          preview.src =
+            body.url;
+
+          download.href =
+            body.url;
+
+          result.style.display =
+            "block";
+
+          result.scrollIntoView({
+            behavior: "smooth"
+          });
+
+        } catch (error) {
+
+          console.error(error);
+
+          showStatus(
+            `❌ ${error.message}`,
+            true
+          );
+
+        } finally {
+
+          button.disabled = false;
+
+          button.textContent =
+            "✨ AI Edit My Short";
+
+        }
+
+      }
+    );
+
+  </script>
+
+</body>
+</html>

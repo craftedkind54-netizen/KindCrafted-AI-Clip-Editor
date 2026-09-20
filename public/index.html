@@ -8,9 +8,7 @@
     content="width=device-width, initial-scale=1.0"
   />
 
-  <title>
-    KindCrafted AI Clip Editor
-  </title>
+  <title>KindCrafted AI Clip Editor</title>
 
   <style>
     * {
@@ -20,195 +18,301 @@
     body {
       margin: 0;
       min-height: 100vh;
+
       font-family:
         Inter,
         Arial,
         Helvetica,
         sans-serif;
+
       background:
         radial-gradient(
           circle at top,
-          #182b52,
-          #071020 55%
+          #15254f 0%,
+          #080e20 45%,
+          #050916 100%
         );
+
       color: white;
     }
 
     .page {
-      width: min(850px, 92%);
+      width: min(900px, 92%);
       margin: 0 auto;
-      padding: 55px 0 90px;
+      padding: 60px 0 100px;
     }
 
-    .hero {
+    .header {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 35px;
     }
 
-    h1 {
+    .header h1 {
       margin: 0;
+
       font-size: clamp(
         32px,
         6vw,
-        55px
+        54px
       );
+
+      font-weight: 800;
     }
 
-    .subtitle {
-      color: #aebbd1;
-      font-size: 18px;
-      line-height: 1.6;
+    .header p {
+      margin: 14px auto 0;
+
       max-width: 650px;
-      margin:
-        15px auto 0;
-    }
 
-    .badge {
-      display: inline-block;
-      margin-top: 15px;
-      padding: 7px 13px;
-      border-radius: 999px;
-      background: #162a4a;
-      color: #7db5ff;
-      font-size: 13px;
-      font-weight: 700;
+      color: #aebbd9;
+
+      font-size: 17px;
+      line-height: 1.6;
     }
 
     .card {
       background:
-        rgba(14, 27, 49, 0.96);
+        rgba(18, 27, 56, 0.95);
+
       border:
-        1px solid #263c61;
-      border-radius: 18px;
-      padding: 28px;
+        1px solid
+        rgba(255, 255, 255, 0.08);
+
+      border-radius: 22px;
+
+      padding: 30px;
+
       box-shadow:
         0 20px 60px
-        rgba(0, 0, 0, 0.28);
+        rgba(0, 0, 0, 0.35);
     }
 
-    .field {
-      margin-bottom: 24px;
+    .section {
+      margin-bottom: 28px;
+    }
+
+    .section:last-child {
+      margin-bottom: 0;
     }
 
     label {
       display: block;
-      font-weight: 800;
-      margin-bottom: 9px;
+
+      font-size: 18px;
+      font-weight: 700;
+
+      margin-bottom: 10px;
     }
 
-    .hint {
-      color: #8495af;
+    .required {
+      color: #8ca9ff;
+      font-size: 13px;
+      margin-left: 6px;
+    }
+
+    .optional {
+      color: #8fa1c7;
+      font-size: 13px;
+      margin-left: 6px;
+    }
+
+    .description {
+      color: #9cabcc;
+
       font-size: 14px;
-      margin-bottom: 9px;
+
+      margin-bottom: 12px;
+
       line-height: 1.5;
     }
 
     input[type="file"] {
       width: 100%;
-      padding: 12px;
-      border-radius: 10px;
+
+      background: #090f23;
+
+      color: white;
+
       border:
-        1px solid #31496d;
-      background: #071224;
-      color: #cbd6e8;
+        1px solid #26345c;
+
+      border-radius: 12px;
+
+      padding: 14px;
+
+      cursor: pointer;
     }
 
     button {
       width: 100%;
+
       border: 0;
-      border-radius: 10px;
-      padding: 15px;
-      background: #1686ff;
-      color: white;
+
+      border-radius: 13px;
+
+      padding: 16px 20px;
+
       font-size: 17px;
       font-weight: 800;
+
       cursor: pointer;
+
+      background:
+        linear-gradient(
+          135deg,
+          #5479ff,
+          #7a5cff
+        );
+
+      color: white;
+
+      transition:
+        transform 0.15s ease,
+        opacity 0.15s ease;
+    }
+
+    button:hover {
+      transform:
+        translateY(-1px);
     }
 
     button:disabled {
       opacity: 0.55;
       cursor: not-allowed;
+      transform: none;
     }
 
-    #status {
-      margin-top: 18px;
-      padding: 14px;
-      border-radius: 10px;
-      background: #071224;
-      color: #9eb0c9;
-      display: none;
-      line-height: 1.5;
-    }
-
-    .result {
-      display: none;
+    .features {
       margin-top: 25px;
-    }
 
-    .result h2 {
-      margin-top: 0;
-    }
-
-    .analysis {
       display: grid;
+
+      grid-template-columns:
+        repeat(
+          auto-fit,
+          minmax(180px, 1fr)
+        );
+
       gap: 12px;
-      margin-bottom: 22px;
     }
 
-    .analysis-box {
-      background: #09172a;
+    .feature {
+      background:
+        rgba(255, 255, 255, 0.035);
+
       border:
-        1px solid #253b5d;
-      border-radius: 12px;
+        1px solid
+        rgba(255, 255, 255, 0.06);
+
+      border-radius: 13px;
+
       padding: 15px;
-    }
 
-    .analysis-title {
-      color: #8397b5;
-      font-size: 12px;
-      text-transform: uppercase;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      margin-bottom: 6px;
-    }
+      color: #afbddb;
 
-    .analysis-value {
-      font-size: 16px;
-      line-height: 1.5;
-    }
-
-    video {
-      display: block;
-      width: min(100%, 360px);
-      max-height: 640px;
-      margin:
-        20px auto;
-      border-radius: 14px;
-      background: black;
-    }
-
-    .download {
-      display: block;
-      text-align: center;
-      text-decoration: none;
-      background: #18a865;
-      color: white;
-      font-weight: 800;
-      padding: 14px;
-      border-radius: 10px;
-    }
-
-    .steps {
-      margin-top: 28px;
-      color: #8294ae;
-      line-height: 1.8;
       font-size: 14px;
     }
 
-    .error {
-      color: #ff9b9b !important;
+    .status {
+      display: none;
+
+      margin-top: 22px;
+
+      border-radius: 13px;
+
+      padding: 16px;
+
+      line-height: 1.5;
+    }
+
+    .status.processing {
+      display: block;
+
+      background:
+        rgba(74, 111, 255, 0.12);
+
       border:
-        1px solid #7d3030;
+        1px solid
+        rgba(74, 111, 255, 0.35);
+
+      color: #b9c9ff;
+    }
+
+    .status.success {
+      display: block;
+
+      background:
+        rgba(56, 211, 159, 0.12);
+
+      border:
+        1px solid
+        rgba(56, 211, 159, 0.35);
+
+      color: #a8f0d4;
+    }
+
+    .status.error {
+      display: block;
+
+      background:
+        rgba(255, 80, 100, 0.12);
+
+      border:
+        1px solid
+        rgba(255, 80, 100, 0.35);
+
+      color: #ffb3bd;
+    }
+
+    .download {
+      display: none;
+
+      margin-top: 15px;
+
+      text-align: center;
+    }
+
+    .download a {
+      display: inline-block;
+
+      text-decoration: none;
+
+      background: #28c995;
+
+      color: #061510;
+
+      padding: 14px 24px;
+
+      border-radius: 12px;
+
+      font-weight: 800;
+    }
+
+    .music-note {
+      margin-top: 10px;
+
+      padding: 11px 13px;
+
+      background:
+        rgba(255, 255, 255, 0.035);
+
+      border-radius: 9px;
+
+      color: #8fa1c7;
+
+      font-size: 13px;
+
+      line-height: 1.5;
+    }
+
+    .footer {
+      margin-top: 28px;
+
+      text-align: center;
+
+      color: #66789f;
+
+      font-size: 13px;
     }
   </style>
 </head>
@@ -217,40 +321,41 @@
 
   <main class="page">
 
-    <section class="hero">
+    <header class="header">
 
       <h1>
         🎬 KindCrafted AI Clip Editor
       </h1>
 
-      <p class="subtitle">
-        Upload your Minecraft footage and music.
-        AI watches the entire clip, understands
-        the story, removes unnecessary moments,
-        generates a matching hook, fills the
-        vertical frame, and mixes quieter music.
+      <p>
+        Upload your clip and let the editor
+        prepare a vertical video automatically.
+        Background music is completely optional.
       </p>
 
-      <div class="badge">
-        AI STORY EDITING • 9:16 • 1080×1920
-      </div>
-
-    </section>
+    </header>
 
     <section class="card">
 
-      <form id="editorForm">
+      <form
+        id="editorForm"
+        enctype="multipart/form-data"
+      >
 
-        <div class="field">
+        <!-- VIDEO -->
+
+        <div class="section">
 
           <label for="video">
-            🎮 Minecraft footage
+            🎬 Video clip
+
+            <span class="required">
+              REQUIRED
+            </span>
           </label>
 
-          <div class="hint">
-            Upload the complete clip. Don't cut
-            out the setup or ending first—the AI
-            needs the entire story.
+          <div class="description">
+            Choose the clip you want to edit.
           </div>
 
           <input
@@ -263,17 +368,22 @@
 
         </div>
 
-        <div class="field">
+
+        <!-- MUSIC -->
+
+        <div class="section">
 
           <label for="music">
             🎵 Background music
+
+            <span class="optional">
+              OPTIONAL
+            </span>
           </label>
 
-          <div class="hint">
-            Music is automatically looped/trimmed
-            and kept around 12% volume. It ducks
-            further when your original audio is
-            active.
+          <div class="description">
+            You can leave this completely blank.
+            Your clip will still process normally.
           </div>
 
           <input
@@ -281,112 +391,124 @@
             name="music"
             type="file"
             accept="audio/*"
-            required
           />
+
+          <div class="music-note">
+
+            <strong>No music selected:</strong>
+            your video's original audio is kept.
+
+            <br />
+
+            <strong>Music selected:</strong>
+            the editor adds it underneath your
+            original audio and fades it near the end.
+
+          </div>
 
         </div>
 
-        <button
-          id="submitButton"
-          type="submit"
-        >
-          ✨ AI Edit My Short
-        </button>
+
+        <!-- SUBMIT -->
+
+        <div class="section">
+
+          <button
+            id="submitButton"
+            type="submit"
+          >
+            ✨ Edit My Clip
+          </button>
+
+        </div>
 
       </form>
 
-      <div id="status"></div>
 
-      <section
-        id="result"
-        class="result"
+      <!-- STATUS -->
+
+      <div
+        id="status"
+        class="status"
+      ></div>
+
+
+      <!-- DOWNLOAD -->
+
+      <div
+        id="download"
+        class="download"
       >
 
-        <h2>
-          Your edited Short
-        </h2>
-
-        <div class="analysis">
-
-          <div class="analysis-box">
-            <div class="analysis-title">
-              Detected video
-            </div>
-            <div
-              id="detectedTitle"
-              class="analysis-value"
-            ></div>
-          </div>
-
-          <div class="analysis-box">
-            <div class="analysis-title">
-              AI hook
-            </div>
-            <div
-              id="hook"
-              class="analysis-value"
-            ></div>
-          </div>
-
-          <div class="analysis-box">
-            <div class="analysis-title">
-              Story
-            </div>
-            <div
-              id="summary"
-              class="analysis-value"
-            ></div>
-          </div>
-
-          <div class="analysis-box">
-            <div class="analysis-title">
-              Sections kept
-            </div>
-            <div
-              id="segments"
-              class="analysis-value"
-            ></div>
-          </div>
-
-        </div>
-
-        <video
-          id="preview"
-          controls
-          playsinline
-        ></video>
-
         <a
-          id="download"
-          class="download"
+          id="downloadLink"
+          href="#"
           download
         >
-          ⬇ Download Edited Short
+          ⬇️ Download Edited Clip
         </a>
 
-      </section>
+      </div>
 
-      <div class="steps">
-        <strong>Editing logic:</strong><br>
-        1. Listen to the entire clip.<br>
-        2. Inspect frames throughout the video.<br>
-        3. Detect Minecraft/minigame context.<br>
-        4. Find setup, important moments and payoff.<br>
-        5. Remove unrelated/dead footage.<br>
-        6. Create a hook matching the whole story.<br>
-        7. Fill a 1080×1920 vertical frame.<br>
-        8. Mix quieter background music.
+
+      <!-- FEATURES -->
+
+      <div class="features">
+
+        <div class="feature">
+          📱 Converts clips to
+          <strong>9:16</strong>
+        </div>
+
+        <div class="feature">
+          🔊 Keeps original audio
+        </div>
+
+        <div class="feature">
+          🎵 Music is optional
+        </div>
+
+        <div class="feature">
+          🎚️ Music stays quieter
+          than the clip
+        </div>
+
+        <div class="feature">
+          🔁 Music automatically loops
+          when needed
+        </div>
+
+        <div class="feature">
+          🌫️ Music fades near the end
+        </div>
+
       </div>
 
     </section>
 
+
+    <div class="footer">
+      KindCrafted AI Clip Editor
+    </div>
+
   </main>
+
 
   <script>
 
     const form =
       document.getElementById(
         "editorForm"
+      );
+
+    const videoInput =
+      document.getElementById(
+        "video"
+      );
+
+    const musicInput =
+      document.getElementById(
+        "music"
       );
 
     const button =
@@ -399,57 +521,124 @@
         "status"
       );
 
-    const result =
-      document.getElementById(
-        "result"
-      );
-
-    const preview =
-      document.getElementById(
-        "preview"
-      );
-
     const download =
       document.getElementById(
         "download"
       );
 
+    const downloadLink =
+      document.getElementById(
+        "downloadLink"
+      );
+
+
     function showStatus(
-      message,
-      isError = false
+      type,
+      message
     ) {
-      status.style.display =
-        "block";
+
+      status.className =
+        `status ${type}`;
 
       status.textContent =
         message;
 
-      status.classList.toggle(
-        "error",
-        isError
-      );
     }
+
 
     form.addEventListener(
       "submit",
+
       async (event) => {
 
         event.preventDefault();
 
-        result.style.display =
+        download.style.display =
           "none";
 
-        button.disabled = true;
 
-        button.textContent =
-          "🧠 AI is watching your clip...";
+        // -------------------------
+        // ONLY VIDEO IS REQUIRED
+        // -------------------------
 
-        showStatus(
-          "Analyzing the whole video. This can take a few minutes for longer clips. Keep this page open."
+        if (
+          !videoInput.files ||
+          videoInput.files.length === 0
+        ) {
+
+          showStatus(
+            "error",
+            "Please choose a video clip."
+          );
+
+          return;
+        }
+
+
+        const videoFile =
+          videoInput.files[0];
+
+
+        // -------------------------
+        // CREATE FORM DATA
+        // -------------------------
+
+        const formData =
+          new FormData();
+
+
+        formData.append(
+          "video",
+          videoFile
         );
 
-        const data =
-          new FormData(form);
+
+        // -------------------------
+        // MUSIC IS OPTIONAL
+        // -------------------------
+
+        if (
+          musicInput.files &&
+          musicInput.files.length > 0
+        ) {
+
+          formData.append(
+            "music",
+            musicInput.files[0]
+          );
+
+        }
+
+
+        // -------------------------
+        // PROCESS
+        // -------------------------
+
+        button.disabled =
+          true;
+
+        button.textContent =
+          "⏳ Editing Clip...";
+
+
+        if (
+          musicInput.files.length > 0
+        ) {
+
+          showStatus(
+            "processing",
+            "Editing your clip and adding background music..."
+          );
+
+        } else {
+
+          showStatus(
+            "processing",
+            "Editing your clip without background music..."
+          );
+
+        }
+
 
         try {
 
@@ -458,86 +647,87 @@
               "/api/edit",
               {
                 method: "POST",
-                body: data
+                body: formData
               }
             );
 
-          const body =
-            await response.json();
 
-          if (!response.ok) {
+          let data;
+
+
+          try {
+
+            data =
+              await response.json();
+
+          } catch {
+
             throw new Error(
-              body.error ||
-              "Editing failed."
+              "The server returned an invalid response."
             );
+
           }
 
-          showStatus(
-            "✅ AI edit finished!"
+
+          if (!response.ok) {
+
+            throw new Error(
+              data.error ||
+              "The clip could not be edited."
+            );
+
+          }
+
+
+          // -------------------------
+          // SUCCESS
+          // -------------------------
+
+          if (data.musicAdded) {
+
+            showStatus(
+              "success",
+              "✅ Your clip is finished! Background music was added."
+            );
+
+          } else {
+
+            showStatus(
+              "success",
+              "✅ Your clip is finished! No background music was added."
+            );
+
+          }
+
+
+          downloadLink.href =
+            data.url;
+
+          downloadLink.setAttribute(
+            "download",
+            ""
           );
 
-          const analysis =
-            body.analysis || {};
-
-          document.getElementById(
-            "detectedTitle"
-          ).textContent =
-            analysis.title ||
-            "Minecraft Short";
-
-          document.getElementById(
-            "hook"
-          ).textContent =
-            analysis.hook ||
-            "No hook returned";
-
-          document.getElementById(
-            "summary"
-          ).textContent =
-            analysis.summary ||
-            "Finished";
-
-          const segments =
-            analysis.segments || [];
-
-          document.getElementById(
-            "segments"
-          ).textContent =
-            segments
-              .map(
-                (segment) =>
-                  `${segment.start.toFixed(1)}s – ${segment.end.toFixed(1)}s`
-              )
-              .join(" • ");
-
-          preview.src =
-            body.url;
-
-          download.href =
-            body.url;
-
-          result.style.display =
+          download.style.display =
             "block";
 
-          result.scrollIntoView({
-            behavior: "smooth"
-          });
 
         } catch (error) {
 
           console.error(error);
 
           showStatus(
-            `❌ ${error.message}`,
-            true
+            "error",
+            `❌ ${error.message}`
           );
 
         } finally {
 
-          button.disabled = false;
+          button.disabled =
+            false;
 
           button.textContent =
-            "✨ AI Edit My Short";
+            "✨ Edit My Clip";
 
         }
 
